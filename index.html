@@ -1,0 +1,1998 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SUBÜ Dijital Ölçme ve Veri Toplama | 100 Puan Çalışma Sistemi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        lvOrange: '#ff7b00', // Numeric Float
+                        lvBlue: '#0095ff',   // Numeric Integer
+                        lvGreen: '#00d647',  // Boolean
+                        lvPink: '#ff42b3',   // String
+                        lvBrown: '#b56e28',  // Cluster / Waveform
+                        lvCyan: '#00e5ff',   // Enum / Cyber Accent
+                        obsidian: '#0b0f19',
+                        panel: '#111827',
+                        card: '#1e293b'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0b0f19;
+            color: #f1f5f9;
+            overflow-x: hidden;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0b0f19; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #00e5ff; }
+
+        /* Flip Card Animation */
+        .perspective { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; transition: transform 0.5s cubic-bezier(0.4, 0.2, 0.2, 1); }
+        .backface-hidden { backface-visibility: hidden; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+
+        /* LabVIEW Wire Patterns */
+        .wire-scalar { height: 3px; }
+        .wire-1d { height: 7px; }
+        .wire-2d { height: 9px; border-top: 3px solid; border-bottom: 3px solid; background: transparent !important; }
+        .wire-boolean { border-bottom: 3px dashed #00d647; background: transparent !important; }
+
+        /* Glow effects */
+        .cyber-glow { box-shadow: 0 0 20px rgba(0, 229, 255, 0.15); }
+        .lv-grid {
+            background-size: 20px 20px;
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-lvCyan selection:text-obsidian">
+
+    <!-- STICKY TOP HEADER & PROGRESS -->
+    <header class="sticky top-0 z-50 bg-obsidian/90 backdrop-blur-md border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 py-3">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <!-- Brand & Course Info -->
+                <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-lvCyan via-blue-600 to-lvPink p-0.5 shadow-lg shadow-lvCyan/20">
+                        <div class="w-full h-full bg-obsidian rounded-[10px] flex items-center justify-center font-mono font-bold text-lg text-lvCyan">
+                            VI
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-lvCyan/10 text-lvCyan border border-lvCyan/30">SUBÜ Karasu BTMYO</span>
+                            <span class="text-xs font-mono text-slate-400">Öğr. Gör. Burak Suha YÜKSEL</span>
+                        </div>
+                        <h1 class="text-lg md:text-xl font-extrabold tracking-tight text-white">
+                            Dijital Ölçme ve Veri Toplama <span class="text-transparent bg-clip-text bg-gradient-to-r from-lvCyan to-lvGreen">100 Puan Sistemi</span>
+                        </h1>
+                    </div>
+                </div>
+
+                <!-- Mastery Progress Bar -->
+                <div class="flex items-center gap-4 bg-slate-900/90 border border-slate-800 px-4 py-2 rounded-xl min-w-[280px]">
+                    <div class="flex-1">
+                        <div class="flex justify-between text-xs font-semibold mb-1">
+                            <span class="text-slate-300">🎯 100 Puan Hazırlık Oranı</span>
+                            <span id="overallProgressText" class="text-lvGreen font-mono">0%</span>
+                        </div>
+                        <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden">
+                            <div id="overallProgressBar" class="h-full bg-gradient-to-r from-lvCyan via-lvBlue to-lvGreen transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <button onclick="resetProgress()" title="İlerlemeyi Sıfırla" class="text-xs text-slate-400 hover:text-red-400 transition p-1.5 rounded-lg hover:bg-slate-800">
+                        🔄
+                    </button>
+                </div>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <nav class="flex items-center gap-1.5 mt-3 overflow-x-auto pb-1 no-scrollbar">
+                <button onclick="switchTab('modules')" id="tab-modules" class="tab-btn active-tab px-3.5 py-2 rounded-lg font-semibold text-xs md:text-sm whitespace-nowrap transition flex items-center gap-2">
+                    <span>📚</span> 7 PDF Tam Özet & Kodlamalar
+                </button>
+                <button onclick="switchTab('simulators')" id="tab-simulators" class="tab-btn px-3.5 py-2 rounded-lg font-semibold text-xs md:text-sm whitespace-nowrap transition flex items-center gap-2">
+                    <span>🎨</span> Canlı LabVIEW Simülatörü
+                </button>
+                <button onclick="switchTab('flashcards')" id="tab-flashcards" class="tab-btn px-3.5 py-2 rounded-lg font-semibold text-xs md:text-sm whitespace-nowrap transition flex items-center gap-2">
+                    <span>🃏</span> Ezber Bozan Flashcard <span id="fcBadge" class="px-1.5 py-0.2 bg-slate-800 text-lvCyan rounded text-[11px] font-mono">0/36</span>
+                </button>
+                <button onclick="switchTab('quiz')" id="tab-quiz" class="tab-btn px-3.5 py-2 rounded-lg font-semibold text-xs md:text-sm whitespace-nowrap transition flex items-center gap-2">
+                    <span>🏆</span> 100 Puanlık Sınav Simülatörü
+                </button>
+                <button onclick="switchTab('cheatsheet')" id="tab-cheatsheet" class="tab-btn px-3.5 py-2 rounded-lg font-semibold text-xs md:text-sm whitespace-nowrap transition flex items-center gap-2">
+                    <span>⚡</span> Son 5 Dk "Cheat Sheet"
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 py-6">
+
+        <!-- ==========================================
+             TAB 1: 7 ÜNİTE TAM ÖZET & AKILDA KALICI KODLAMALAR
+             ========================================== -->
+        <section id="view-modules" class="space-y-6">
+            <!-- Top Filter & Search Bar -->
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex flex-col md:flex-row gap-3 items-center justify-between">
+                <div class="flex flex-wrap gap-1.5 w-full md:w-auto">
+                    <button onclick="filterModules('all')" class="mod-filter-btn bg-lvCyan text-obsidian font-bold px-3 py-1.5 rounded-lg text-xs transition" data-mod="all">Tümü (7 PDF)</button>
+                    <button onclick="filterModules('1')" class="mod-filter-btn bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs transition" data-mod="1">1. Dijital Ölçme & Siber</button>
+                    <button onclick="filterModules('2')" class="mod-filter-btn bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs transition" data-mod="2">2. LabVIEW & CVE/CWE</button>
+                    <button onclick="filterModules('3')" class="mod-filter-btn bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs transition" data-mod="3">3. Veri Tipleri & Kablolar</button>
+                    <button onclick="filterModules('4')" class="mod-filter-btn bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs transition" data-mod="4">4. Döngüler & Timing</button>
+                    <button onclick="filterModules('5')" class="mod-filter-btn bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs transition" data-mod="5">5. Case Structure</button>
+                    <button onclick="filterModules('6')" class="mod-filter-btn bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs transition" data-mod="6">6. Local Var & Sequence</button>
+                    <button onclick="filterModules('7')" class="mod-filter-btn bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs transition" data-mod="7">7. Matematik & Formula</button>
+                </div>
+                <div class="relative w-full md:w-72">
+                    <input type="text" id="moduleSearchInput" oninput="searchModules()" placeholder="Konu, CWE, kısayol ara..." class="w-full bg-obsidian border border-slate-700 focus:border-lvCyan rounded-xl pl-9 pr-4 py-2 text-sm text-white placeholder-slate-500 outline-none">
+                    <span class="absolute left-3 top-2.5 text-slate-400">🔍</span>
+                </div>
+            </div>
+
+            <!-- Modules Container -->
+            <div id="modulesContainer" class="space-y-6">
+                <!-- Populated by JS -->
+            </div>
+        </section>
+
+        <!-- ==========================================
+             TAB 2: CANLI LABVIEW SİMÜLATÖRÜ & LABORATUVARI
+             ========================================== -->
+        <section id="view-simulators" class="hidden space-y-8">
+            <div class="bg-gradient-to-r from-slate-900 via-slate-900 to-lvCyan/10 border border-slate-800 rounded-2xl p-5">
+                <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                    <span>🎨</span> İnteraktif LabVIEW Görsel Simülatörü
+                </h2>
+                <p class="text-sm text-slate-300 mt-1">
+                    Slaytlardaki kabloları, buton mekaniklerini, döngü tuzaklarını ve Formula Node ifadelerini burada bizzat deneyerek kalıcı hafızaya kazı.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- SIMULATOR 1: WIRE COLOR & DATA TYPE INSPECTOR -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between lv-grid">
+                    <div>
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+                            <h3 class="font-bold text-base text-lvCyan flex items-center gap-2">🔌 1. Kablo Renkleri & Veri Tipi Denetleyicisi</h3>
+                            <span class="text-xs font-mono bg-slate-800 px-2 py-1 rounded text-slate-300">PDF 2, 3 & 5</span>
+                        </div>
+                        <p class="text-xs text-slate-400 mb-3">Bir veri tipine tıkla; Blok Diyagram terminal ikonunu, kablo rengini, dizi kalınlığını ve boş tünel (Default) değerini gör:</p>
+                        
+                        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-5" id="wireSelectorBtns">
+                            <!-- Generated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Visual Wire Canvas -->
+                    <div id="wireDisplayBox" class="bg-obsidian/90 border border-slate-800 rounded-xl p-4 space-y-4">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- SIMULATOR 2: MECHANICAL ACTION (6 BUTTON MODES) -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between lv-grid">
+                    <div>
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+                            <h3 class="font-bold text-base text-lvGreen flex items-center gap-2">🔘 2. Buton Çalışma Biçimleri (Mechanical Action)</h3>
+                            <span class="text-xs font-mono bg-slate-800 px-2 py-1 rounded text-slate-300">PDF 3 - Sayfa 7-8</span>
+                        </div>
+                        <p class="text-xs text-slate-400 mb-3">Modu seç ve aşağıdaki <b>"OK / TEST BUTONU"</b> üzerine basılı tut, bırak ve LabVIEW'in nasıl okuduğunu canlı izle:</p>
+
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4" id="mechActionBtns">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <div class="bg-obsidian/90 border border-slate-800 rounded-xl p-4">
+                        <div id="mechExplanation" class="text-xs text-amber-300 font-medium mb-4 bg-amber-500/10 border border-amber-500/30 p-2.5 rounded-lg">
+                            Mod seçildiğinde açıklama burada görünür.
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row items-center justify-around gap-4 py-2">
+                            <!-- Interactive Button -->
+                            <div class="text-center">
+                                <div class="text-[11px] font-mono text-slate-400 mb-1">FRONT PANEL KONTROLÜ</div>
+                                <button id="simPushButton" 
+                                    onmousedown="handleSimBtnDown()" 
+                                    onmouseup="handleSimBtnUp()" 
+                                    onmouseleave="handleSimBtnLeave()"
+                                    ontouchstart="handleSimBtnDown(); event.preventDefault();" 
+                                    ontouchend="handleSimBtnUp(); event.preventDefault();"
+                                    class="w-36 h-14 rounded-xl font-bold text-sm border-2 transition-all select-none shadow-lg bg-slate-800 border-slate-600 text-slate-200 active:scale-95">
+                                    BAS / TUT (FALSE)
+                                </button>
+                            </div>
+
+                            <!-- Simulated LED Indicator -->
+                            <div class="text-center">
+                                <div class="text-[11px] font-mono text-slate-400 mb-1">BOOLEAN LED GÖSTERGE</div>
+                                <div id="simLedIndicator" class="w-14 h-14 mx-auto rounded-full border-4 border-slate-700 bg-emerald-950 transition-all duration-150 flex items-center justify-center font-mono text-xs font-bold text-slate-400">
+                                    OFF
+                                </div>
+                            </div>
+
+                            <!-- Simulated VI Read Action -->
+                            <div class="text-center">
+                                <div class="text-[11px] font-mono text-slate-400 mb-1">BLOK DİYAGRAM OKUMASI</div>
+                                <button onclick="triggerViRead()" class="px-3 py-2 rounded-lg bg-lvBlue/20 hover:bg-lvBlue/30 text-lvCyan border border-lvCyan/40 text-xs font-mono transition">
+                                    ⚡ VI Tarafından Oku
+                                </button>
+                                <div class="text-[10px] text-slate-400 mt-1">(Latch modlarını sıfırlar)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SIMULATOR 3: FOR LOOP, NESTED LOOP & STOP BUTTON TRAP -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between lv-grid">
+                    <div>
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+                            <h3 class="font-bold text-base text-lvBlue flex items-center gap-2">🔄 3. Döngü Hesaplayıcı & Stop Butonu Tuzağı</h3>
+                            <span class="text-xs font-mono bg-slate-800 px-2 py-1 rounded text-slate-300">PDF 4 - Sayfa 5, 11-18</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                            <div class="bg-obsidian/80 p-3 rounded-xl border border-slate-800">
+                                <label class="text-xs text-slate-400 block mb-1">Dış Döngü <span class="text-lvBlue font-mono font-bold">[N_dış]</span> Sayısı:</label>
+                                <input type="number" id="simOuterN" value="5" min="1" max="100" oninput="updateLoopSim()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white font-mono text-sm">
+                            </div>
+                            <div class="bg-obsidian/80 p-3 rounded-xl border border-slate-800">
+                                <label class="text-xs text-slate-400 block mb-1">İç Döngü <span class="text-lvBlue font-mono font-bold">[N_iç]</span> Sayısı:</label>
+                                <input type="number" id="simInnerN" value="4" min="1" max="100" oninput="updateLoopSim()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white font-mono text-sm">
+                            </div>
+                        </div>
+
+                        <div id="loopSimResult" class="bg-obsidian/90 border border-slate-800 rounded-xl p-3.5 text-xs space-y-2 mb-4">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Stop Button Trap Interactive Comparison -->
+                    <div class="bg-obsidian/90 border border-red-500/30 rounded-xl p-3.5">
+                        <div class="text-xs font-bold text-red-400 mb-2 flex items-center justify-between">
+                            <span>🚨 SINAV KLASİĞİ: Stop Butonu İçeride vs Dışarıda (PDF 4 - S.18)</span>
+                        </div>
+                        <div class="flex gap-2 mb-2">
+                            <button onclick="setStopTrapMode('inside')" id="trapBtnInside" class="flex-1 py-1.5 px-2 rounded-lg text-xs font-bold bg-lvGreen text-obsidian transition">A) Stop Döngü İÇİNDE</button>
+                            <button onclick="setStopTrapMode('outside')" id="trapBtnOutside" class="flex-1 py-1.5 px-2 rounded-lg text-xs font-bold bg-slate-800 text-slate-300 transition">B) Stop Döngü DIŞINDA (Tünelli)</button>
+                        </div>
+                        <p id="stopTrapText" class="text-xs text-slate-300 leading-relaxed">
+                            <b>A Durumu (Doğru Kullanım):</b> Stop boolean kontrolü döngünün içinde yer alır ve doğrudan koşullu terminale bağlıdır. Kontrol her iterasyonda yeniden okunur; kullanıcı çalışırken basarsa döngü anında durur.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- SIMULATOR 4: THERMOMETER CONVERTER & FORMULA NODE TERNARY -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between lv-grid">
+                    <div>
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+                            <h3 class="font-bold text-base text-lvOrange flex items-center gap-2">🌡️ 4. Termometre & Formula Node Canlı Test</h3>
+                            <span class="text-xs font-mono bg-slate-800 px-2 py-1 rounded text-slate-300">PDF 3 (S.20) & PDF 7 (S.14)</span>
+                        </div>
+
+                        <!-- Celsius Input -->
+                        <div class="bg-obsidian/80 p-3 rounded-xl border border-slate-800 mb-4">
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300 font-semibold">Celcius Değerinden Sıcaklık Giriniz (C):</span>
+                                <span id="celsiusValLabel" class="font-mono text-lvOrange font-bold">50 °C</span>
+                            </div>
+                            <input type="range" id="simCelsiusInput" min="0" max="100" value="50" oninput="updateThermoSim()" class="w-full accent-lvOrange cursor-pointer">
+                            <div class="grid grid-cols-4 gap-2 mt-3 text-center">
+                                <div class="bg-slate-900 p-2 rounded-lg border border-red-500/40">
+                                    <div class="text-[10px] text-slate-400">CELCIUS</div>
+                                    <div id="thC" class="font-mono font-bold text-red-400 text-sm">50</div>
+                                    <div class="text-[9px] text-slate-500 font-mono">C</div>
+                                </div>
+                                <div class="bg-slate-900 p-2 rounded-lg border border-lvGreen/40">
+                                    <div class="text-[10px] text-slate-400">KELVIN</div>
+                                    <div id="thK" class="font-mono font-bold text-lvGreen text-sm">323</div>
+                                    <div class="text-[9px] text-slate-500 font-mono">C + 273</div>
+                                </div>
+                                <div class="bg-slate-900 p-2 rounded-lg border border-amber-400/40">
+                                    <div class="text-[10px] text-slate-400">REOMUR</div>
+                                    <div id="thR" class="font-mono font-bold text-amber-400 text-sm">40</div>
+                                    <div class="text-[9px] text-slate-500 font-mono">C * 0,8</div>
+                                </div>
+                                <div class="bg-slate-900 p-2 rounded-lg border border-lvCyan/40">
+                                    <div class="text-[10px] text-slate-400">FAHRENHEIT</div>
+                                    <div id="thF" class="font-mono font-bold text-lvCyan text-sm">122</div>
+                                    <div class="text-[9px] text-slate-500 font-mono">C*1,8 + 32</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Formula Node Live Evaluator -->
+                    <div class="bg-obsidian/90 border border-slate-800 rounded-xl p-3.5">
+                        <div class="text-xs font-bold text-lvOrange mb-2 flex items-center justify-between">
+                            <span>🧮 Formula Node Ternary Operatörü (PDF 7 - Sayfa 14)</span>
+                            <code class="text-[11px] bg-slate-800 px-2 py-0.5 rounded text-lvCyan">x = (a &lt;= 7) ? sqrt(a) : -1;</code>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="flex-1">
+                                <label class="text-[11px] text-slate-400 block mb-1">INPUT 1 (a değişkeni):</label>
+                                <input type="number" id="formulaInputA" value="7" oninput="updateFormulaSim()" class="w-full bg-slate-900 border border-lvOrange/50 rounded-lg px-3 py-1.5 text-white font-mono text-sm">
+                            </div>
+                            <div class="text-lvOrange font-mono font-bold text-lg mt-4">➔</div>
+                            <div class="flex-1">
+                                <label class="text-[11px] text-slate-400 block mb-1">OUTPUT (x çıkışı):</label>
+                                <div id="formulaOutputX" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-lvGreen font-mono font-bold text-sm">
+                                    2.64575
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-[11px] text-slate-400 mt-2">
+                            💡 <b>Slayt Notu:</b> Slaytta metin olarak "karesini alıp" yazsa da blok diyagramdaki kod <code class="text-amber-300">sqrt(a)</code> (karekök) alır! <b>a=7</b> girildiğinde <b>2,64575</b>, <b>a=10</b> girildiğinde <b>-1</b> üretir.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==========================================
+             TAB 3: AKILLI FLASHCARD SİSTEMİ
+             ========================================== -->
+        <section id="view-flashcards" class="hidden space-y-6">
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-lg font-bold text-white flex items-center gap-2">🃏 Akıllı Flashcard Sistemi (36 Kritik Sınav Kartı)</h2>
+                    <p class="text-xs text-slate-400">Kartın üzerine tıklayarak cevabı çevir. "Öğrendim" dediklerin ilerleme çubuğunu doldurur.</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="filterFlashcards('all')" id="fcFilterAll" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-lvCyan text-obsidian">Tüm Kartlar</button>
+                    <button onclick="filterFlashcards('unlearned')" id="fcFilterUnlearned" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700">Tekrar Edilecekler</button>
+                    <button onclick="shuffleFlashcards()" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-lvPink hover:bg-slate-700 border border-lvPink/30">🔀 Karıştır</button>
+                </div>
+            </div>
+
+            <!-- Flashcard Stage -->
+            <div class="max-w-2xl mx-auto">
+                <div class="flex justify-between items-center text-xs font-mono text-slate-400 mb-2 px-1">
+                    <span id="fcCategoryLabel" class="text-lvCyan font-bold">Ünite 1</span>
+                    <span id="fcCounterLabel">Kart 1 / 36</span>
+                </div>
+
+                <!-- 3D Flip Card -->
+                <div onclick="flipCurrentCard()" class="perspective cursor-pointer select-none h-72 sm:h-80 w-full">
+                    <div id="flashcardInner" class="relative w-full h-full transform-style-3d">
+                        <!-- Front -->
+                        <div class="absolute inset-0 backface-hidden bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 border-2 border-slate-700 hover:border-lvCyan rounded-2xl p-6 flex flex-col justify-between shadow-2xl">
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs font-mono uppercase px-2.5 py-1 rounded bg-slate-800 text-lvCyan border border-slate-700">SORU / KAVRAM</span>
+                                <span id="fcStatusBadge" class="text-xs font-mono text-slate-400">⏳ Öğreniliyor</span>
+                            </div>
+                            <div class="my-auto text-center px-2">
+                                <h3 id="fcFrontText" class="text-lg sm:text-xl font-bold text-white leading-snug">
+                                    Soru yükleniyor...
+                                </h3>
+                            </div>
+                            <div class="text-center text-xs text-slate-400 font-mono">
+                                👆 Cevabı görmek için karta tıkla (veya Boşluk tuşu)
+                            </div>
+                        </div>
+
+                        <!-- Back -->
+                        <div class="absolute inset-0 backface-hidden rotate-y-180 bg-gradient-to-br from-slate-900 via-emerald-950/30 to-slate-900 border-2 border-lvGreen rounded-2xl p-6 flex flex-col justify-between shadow-2xl">
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs font-mono uppercase px-2.5 py-1 rounded bg-lvGreen/20 text-lvGreen border border-lvGreen/40">CEVAP & HAFIZA ÇİVİSİ</span>
+                                <span class="text-xs font-mono text-lvGreen">✓ Doğru Bilgi</span>
+                            </div>
+                            <div class="my-auto text-center px-2">
+                                <p id="fcBackText" class="text-base sm:text-lg font-medium text-slate-100 leading-relaxed">
+                                    Cevap yükleniyor...
+                                </p>
+                                <div id="fcMemoryTip" class="mt-3 text-xs bg-obsidian/80 border border-amber-500/40 text-amber-300 px-3 py-2 rounded-lg font-mono">
+                                    İpucu...
+                                </div>
+                            </div>
+                            <div class="text-center text-xs text-slate-400 font-mono">
+                                👆 Soruya dönmek için tekrar tıkla
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5">
+                    <button onclick="prevFlashcard()" class="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-sm transition">
+                        ⬅️ Önceki
+                    </button>
+                    <button onclick="markFlashcard(false)" class="py-2.5 px-4 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-semibold text-sm transition">
+                        🤔 Tekrar Et
+                    </button>
+                    <button onclick="markFlashcard(true)" class="py-2.5 px-4 rounded-xl bg-lvGreen/20 hover:bg-lvGreen/30 text-lvGreen border border-lvGreen/40 font-bold text-sm transition">
+                        ✅ Biliyorum!
+                    </button>
+                    <button onclick="nextFlashcard()" class="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-sm transition">
+                        Sonraki ➡️
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==========================================
+             TAB 4: 100 PUANLIK SINAV SİMÜLATÖRÜ (QUIZ)
+             ========================================== -->
+        <section id="view-quiz" class="hidden space-y-6">
+            <!-- Quiz Header & Mode Selector -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-xl font-bold text-white flex items-center gap-2">🏆 100 Puanlık Sınav Simülatörü</h2>
+                    <p class="text-xs text-slate-400 mt-1">Hocanın 7 PDF'teki cümlelerinden, CWE/CVE kodlarından ve blok diyagram örneklerinden hazırlanan nokta atışı sınav soruları.</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="startQuiz('all')" id="qzModeAll" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-lvCyan text-obsidian transition">Tam Sınav (30 Soru)</button>
+                    <button onclick="startQuiz('cyber')" id="qzModeCyber" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition">🛡️ Siber Güvenlik & CVE (10)</button>
+                    <button onclick="startQuiz('labview')" id="qzModeLabview" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition">⚙️ LabVIEW & Diyagram (20)</button>
+                </div>
+            </div>
+
+            <!-- Live Score Banner -->
+            <div id="quizScoreBanner" class="bg-obsidian border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-6">
+                    <div>
+                        <div class="text-[11px] text-slate-400 font-mono">CEVAPLANAN</div>
+                        <div id="qzAnsweredCount" class="text-lg font-bold font-mono text-white">0 / 30</div>
+                    </div>
+                    <div>
+                        <div class="text-[11px] text-slate-400 font-mono">DOĞRU / YANLIŞ</div>
+                        <div class="text-lg font-bold font-mono">
+                            <span id="qzCorrectCount" class="text-lvGreen">0 D</span> / <span id="qzWrongCount" class="text-red-400">0 Y</span>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-[11px] text-slate-400 font-mono">TAHMİNİ SINAV NOTUN</div>
+                        <div id="qzCurrentScore" class="text-2xl font-extrabold font-mono text-lvCyan">0 / 100</div>
+                    </div>
+                </div>
+                <button onclick="resetCurrentQuiz()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 transition">
+                    🔄 Sınavı Sıfırla & Yeniden Çöz
+                </button>
+            </div>
+
+            <!-- Questions List -->
+            <div id="quizQuestionsContainer" class="space-y-4">
+                <!-- Populated by JS -->
+            </div>
+        </section>
+
+        <!-- ==========================================
+             TAB 5: SON 5 DAKİKA "CHEAT SHEET" (HIZLI TEKRAR TABLOLARI)
+             ========================================== -->
+        <section id="view-cheatsheet" class="hidden space-y-6">
+            <div class="bg-gradient-to-r from-lvPink/20 via-slate-900 to-lvCyan/20 border border-slate-800 rounded-2xl p-5">
+                <h2 class="text-xl font-bold text-white flex items-center gap-2">⚡ Sınavdan Önceki Son 5 Dakika "Cheat Sheet"</h2>
+                <p class="text-xs text-slate-300 mt-1">Sınav kağıdı dağıtılmadan hemen önce göz atman gereken tüm tablolar, kısayollar, CVE/CWE kodları ve karşılaştırmalar tek ekranda.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- TABLE 1: CVE & CWE SECURITY CODES -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 overflow-x-auto">
+                    <h3 class="text-sm font-bold text-red-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                        🛡️ 1. LabVIEW Siber Güvenlik CVE & CWE Kodları (PDF 2 - S.11-12)
+                    </h3>
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="border-b border-slate-800 text-slate-400 font-mono">
+                                <th class="py-2 pr-2">Kod / Terim</th>
+                                <th class="py-2 px-2">Zafiyet Adı (Türkçe / İngilizce)</th>
+                                <th class="py-2 pl-2">Etki / Kaynak</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/70">
+                            <tr>
+                                <td class="py-2.5 pr-2 font-mono font-bold text-lvCyan">CVE-2025-2631<br>CVE-2025-2632</td>
+                                <td class="py-2.5 px-2">Veri ayrıştırma (data parsing) sınır dışı yazma</td>
+                                <td class="py-2.5 pl-2 text-red-300 font-semibold">CVSS v3.1: 7.8 (Yüksek) - Uzaktan Kod Çalıştırma (RCE)</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2.5 pr-2 font-mono font-bold text-amber-400">CWE-787</td>
+                                <td class="py-2.5 px-2">Sınır Dışı Yazma (Out-of-bounds Write)</td>
+                                <td class="py-2.5 pl-2">CVE-2025-2631/2632'nin temel hata sınıfı</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2.5 pr-2 font-mono font-bold text-lvPink">CWE-362</td>
+                                <td class="py-2.5 px-2">Yarış Durumu (Race Condition)</td>
+                                <td class="py-2.5 pl-2">Paralel veri akışı / Eşzamanlılık (Concurrency) & Local Variable riski</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2.5 pr-2 font-mono font-bold text-lvPink">CWE-833</td>
+                                <td class="py-2.5 px-2">Kilitlenme (Deadlock)</td>
+                                <td class="py-2.5 pl-2">Paralel veri akışı eşzamanlılık zafiyeti</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2.5 pr-2 font-mono font-bold text-lvPink">CWE-667</td>
+                                <td class="py-2.5 px-2">Paylaşılan Kaynaklara Uygun Olmayan Erişim (Improper Locking)</td>
+                                <td class="py-2.5 pl-2">Paralel veri akışı eşzamanlılık zafiyeti</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2.5 pr-2 font-mono font-bold text-lvGreen">JKI Security Suite</td>
+                                <td class="py-2.5 px-2">LabVIEW Uygulama Güvenliği Aracı</td>
+                                <td class="py-2.5 pl-2">Girdi doğrulama eksikliği, gömülü parola ve açık metin verileri yakalar</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2.5 pr-2 font-mono font-bold text-lvBlue">Stuxnet & Modbus</td>
+                                <td class="py-2.5 px-2">SCADA/DAQ Kritik Altyapı Vakaları</td>
+                                <td class="py-2.5 pl-2">Endüstriyel kontrol sistemlerini (ICS) hedef alan tarihsel örnekler</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- TABLE 2: KEYBOARD SHORTCUTS -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 overflow-x-auto">
+                    <h3 class="text-sm font-bold text-lvCyan uppercase tracking-wider mb-3 flex items-center gap-2">
+                        ⌨️ 2. LabVIEW Klavye Kısayolları (PDF 2 & 3)
+                    </h3>
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="border-b border-slate-800 text-slate-400 font-mono">
+                                <th class="py-2 pr-2">Kısayol</th>
+                                <th class="py-2 px-2">Komut Adı</th>
+                                <th class="py-2 pl-2">Ne İşe Yarar?</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/70">
+                            <tr>
+                                <td class="py-2 pr-2 font-mono font-bold text-lvGreen">Ctrl + N</td>
+                                <td class="py-2 px-2">New VI</td>
+                                <td class="py-2 pl-2">Yeni bir sanal enstrüman (.vi) dosyası oluşturur</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 pr-2 font-mono font-bold text-lvGreen">Ctrl + T</td>
+                                <td class="py-2 px-2">Tile Left and Right</td>
+                                <td class="py-2 pl-2">Front Panel ve Block Diagram pencerelerini yan yana hizalar</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 pr-2 font-mono font-bold text-lvOrange">Ctrl + K</td>
+                                <td class="py-2 px-2">Move Forward</td>
+                                <td class="py-2 pl-2">Seçili nesneyi <b>bir katman öne</b> alır</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 pr-2 font-mono font-bold text-lvOrange">Ctrl + J</td>
+                                <td class="py-2 px-2">Move Backward</td>
+                                <td class="py-2 pl-2">Seçili nesneyi <b>bir katman geri</b> alır</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 pr-2 font-mono font-bold text-lvPink">Ctrl + Shift + K</td>
+                                <td class="py-2 px-2">Move To Front</td>
+                                <td class="py-2 pl-2">Seçili nesneyi <b>en öne</b> alır</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 pr-2 font-mono font-bold text-lvPink">Ctrl + Shift + J</td>
+                                <td class="py-2 px-2">Move To Back</td>
+                                <td class="py-2 pl-2">Seçili nesneyi <b>en arkaya</b> atar</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 pr-2 font-mono font-bold text-lvCyan">Ctrl + Sürükle</td>
+                                <td class="py-2 px-2">Duplicate Object</td>
+                                <td class="py-2 pl-2">Seçili nesneyi sürükleyerek çoğaltır/kopyalar (Termometre örneği)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- TABLE 3: EXPRESSION NODE VS FORMULA NODE -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 overflow-x-auto">
+                    <h3 class="text-sm font-bold text-lvOrange uppercase tracking-wider mb-3 flex items-center gap-2">
+                        🧮 3. Expression Node vs Formula Node Farkları (PDF 7)
+                    </h3>
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="border-b border-slate-800 text-slate-400 font-mono">
+                                <th class="py-2 pr-2">Özellik</th>
+                                <th class="py-2 px-2 text-lvCyan">Expression Node</th>
+                                <th class="py-2 pl-2 text-lvOrange">Formula Node</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/70">
+                            <tr>
+                                <td class="py-2 pr-2 font-semibold">Bulunduğu Palet</td>
+                                <td class="py-2 px-2 font-mono">Numeric Paleti</td>
+                                <td class="py-2 pl-2 font-mono">Structures Paleti</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 pr-2 font-semibold">Giriş / Çıkış</td>
+                                <td class="py-2 px-2"><b>Tek giriş (x), Tek çıkış</b></td>
+                                <td class="py-2 pl-2"><b>Çoklu giriş, Çoklu çıkış</b> (Sağ tık Add Input/Output)</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 pr-2 font-semibold">Satır & Noktalı Virgül</td>
+                                <td class="py-2 px-2">Tek satır, <b>(;) gerekmez</b></td>
+                                <td class="py-2 pl-2">Çok satırlı, her satır <b>noktalı virgül (;)</b> ile biter</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 pr-2 font-semibold">Kontrol Yapıları</td>
+                                <td class="py-2 px-2 text-red-400">Yoktur (Kullanılamaz)</td>
+                                <td class="py-2 pl-2 text-lvGreen"><b>if-else, for, while, ? : (ternary)</b> kullanılır</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 pr-2 font-semibold">Özel Fonksiyonlar</td>
+                                <td class="py-2 px-2">sin, cos, sqrt, pow(x,y), abs, ln, log...</td>
+                                <td class="py-2 pl-2">Tümüne ek olarak: <b>min(x,y), max(x,y), mod(x,y), rand()</b></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- TABLE 4: STRUCTURES & LOOPS COMPARISON -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 overflow-x-auto">
+                    <h3 class="text-sm font-bold text-lvGreen uppercase tracking-wider mb-3 flex items-center gap-2">
+                        🔁 4. Yapılar (Structures) & Zamanlayıcılar Özeti (PDF 4, 5, 6)
+                    </h3>
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="border-b border-slate-800 text-slate-400 font-mono">
+                                <th class="py-2 pr-2">Yapı / Fonksiyon</th>
+                                <th class="py-2 px-2">Temel Kuralı</th>
+                                <th class="py-2 pl-2">Kritik Sınav Detayı</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/70">
+                            <tr>
+                                <td class="py-2 pr-2 font-bold text-lvBlue">For Loop</td>
+                                <td class="py-2 px-2">Sabit <b>N</b> kez çalışır</td>
+                                <td class="py-2 pl-2"><b>i</b> sayacı 0'dan başlar, <b>N-1</b>'de biter. Auto-Indexing varsayılan açıktır.</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 pr-2 font-bold text-lvGreen">While Loop</td>
+                                <td class="py-2 px-2">Koşula bağlı belirsiz tekrar</td>
+                                <td class="py-2 pl-2">Koşul sonda kontrol edilir, <b>EN AZ 1 KEZ ÇALIŞIR!</b> Stop butonu içeride olmalı.</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 pr-2 font-bold text-lvOrange">Case Structure</td>
+                                <td class="py-2 px-2">if-else / switch-case</td>
+                                <td class="py-2 pl-2">Sadece 1 case çalışır. Integer/String/Enum'da <b>Default</b> zorunlu. Çıkış tüneli her case'de bağlanmalı.</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 pr-2 font-bold text-lvPink">Flat Sequence</td>
+                                <td class="py-2 px-2">Soldan sağa sıralı kareler</td>
+                                <td class="py-2 pl-2">Tüm kareler yan yana açıktır (Stacked'da üst üste gizlidir ve Sequence Local gerekir).</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 pr-2 font-bold text-lvCyan">Local Variable</td>
+                                <td class="py-2 px-2">Kablosuz okuma/yazma</td>
+                                <td class="py-2 pl-2">Kontrole yazma, göstergeden okuma imkânı verir. Aşırı kullanımı <b>Race Condition</b> yapar.</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 pr-2 font-bold text-amber-300">Wait (ms) vs Time Delay</td>
+                                <td class="py-2 px-2">Döngü yavaşlatma</td>
+                                <td class="py-2 pl-2"><b>Wait (ms)</b> milisaniye bekler; <b>Time Delay</b> saniye bekler!</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="border-t border-slate-800/80 bg-obsidian py-4 mt-12">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2">
+            <div>SUBÜ Bilişim Güvenliği Teknolojisi • Dijital Ölçme ve Veri Toplama Teknikleri (1-7 PDF Tam Kapsam)</div>
+            <div class="font-mono text-slate-400">Hedef: <span class="text-lvGreen font-bold">100 / 100</span> • Başarılar Süleyman! 🚀</div>
+        </div>
+    </footer>
+
+    <!-- ==========================================
+         JAVASCRIPT ENGINE & COMPLETE COURSE DATA
+         ========================================== -->
+    <script>
+        // ----------------------------------------------------
+        // 1. ALL 7 PDF MODULES DATA
+        // ----------------------------------------------------
+        const MODULES_DATA = [
+            {
+                id: "1",
+                pdfTitle: "1. PDF: Dijital Ölçme ve Veri Toplama Nedir? & Siber Güvenlik İlişkisi",
+                badge: "Ünite 1 • 21 Slayt",
+                color: "lvCyan",
+                sections: [
+                    {
+                        title: "Ölçme, Dijital Ölçme ve DAQ (Veri Toplama) Tanımları",
+                        points: [
+                            "<b>Ölçme:</b> Bir niceliğin belirli bir birime göre sayısal değerinin belirlenmesi sürecidir.",
+                            "<b>Dijital Ölçme:</b> Sıcaklık, basınç, ivme, ses, görüntü gibi fiziksel büyüklüklerin <b>sensörler/transdüserler</b> aracılığıyla algılanarak <b>Analog-Dijital Dönüştürücüler (ADC)</b> yardımıyla sayısal verilere çevrilmesi sürecidir.",
+                            "<b>Veri Toplama (Data Acquisition - DAQ):</b> Sensörlerden elde edilen analog sinyallerin örneklenmesi, dönüştürülmesi ve bir bilgisayar ya da gömülü sistem ortamında saklanabilir/işlenebilir hale getirilmesi işlemidir.",
+                            "<b>Fiziksel Büyüklükten Sayısal Veriye 5 Adım (Şema Sırası):</b> 1) Fiziksel Büyüklük ➔ 2) Sensör / Algılama ➔ 3) Analog-Dijital Dönüşüm (ADC) ➔ 4) Sayısal Veri (Bit - 1001101) ➔ 5) Depolama / İşleme."
+                        ],
+                        mnemonic: "HAFIZA ÇİVİSİ: DAQ Zinciri = 'F-S-Ş-A-Y-K' -> Fiziksel büyüklük -> Sensör (Gerilime çevirir) -> Sinyal Şartlandırma -> ADC (Bit'e çevirir) -> Yazılım (LabVIEW) -> Kontrol (DAC ile geri besleme).",
+                        trap: "SINAV TUZAĞI: Sensör fiziksel büyüklüğü doğrudan bit'e çevirmez! Önce elektriksel sinyale (genellikle gerilime) çevirir, sayısal koda (12, 16, 24 bit) çeviren birim ADC'dir."
+                    },
+                    {
+                        title: "DAQ Sisteminin Yapısı, Avantajları ve Kullanım Alanları",
+                        points: [
+                            "<b>Tipik Bir Bilgisayar Tabanlı DAQ Blokları:</b> 1) <b>Algılayıcı/Sensör</b> (Fiziksel büyüklüğü elektriksel gerilime çevirir), 2) <b>Sinyal Koşullandırma / Şartlandırma (Signal Conditioning)</b> (Filtreleme, yükseltme/amplification, izolasyon ve doğrusallaştırma yapar), 3) <b>ADC</b> (Belirli örnekleme frekansında örnekleyip 12, 16, 24 bit sayısal koda çevirir), 4) <b>Veri İşleme Yazılımı</b> (LabVIEW vb.), 5) <b>Çıkış / Kontrol Birimi</b> (Gerekirse <b>DAC - Dijital-Analog Çevirici</b> üzerinden sisteme geri besleme/kontrol sinyali uygular).",
+                            "<b>Dijital Ölçmenin Analog Yöntemlerden 5 Farkı:</b> Yüksek hassasiyet, tekrarlanabilirlik, gürültüye karşı dayanıklılık, otomatik kayıt ve uzaktan erişilebilirlik.",
+                            "<b>Ne İşe Yarar (Veriden Karara 4'lü):</b> Analiz, İçgörü, Optimizasyon, Performans Takibi. Sezgisel değil <b>kanıta dayalı yönetim</b> sağlar; anomali, sapma ve arızaların erken tespitine imkân tanır; insan kaynaklı ölçüm hatalarını azaltır; bilimsel araştırmalarda <b>tekrarlanabilirlik ve doğrulanabilirlik</b> sağlar.",
+                            "<b>Kullanım Alanları:</b> Endüstri 4.0 (Akıllı fabrikalar, öngörücü bakım, SCADA), Sağlık (Uzaktan hasta izleme, giyilebilir teknoloji, tıbbi görüntüleme), Eğitim (Öğrenme analitiği), Çevre ve Tarım (Meteoroloji, hassas tarımda toprak nemi/verim), Akıllı Şehirler (Trafik, akıllı bina), Bilimsel Araştırma (Yapısal sağlık izleme, uzay), Finans ve Kamu (Akıllı sayaçlar, e-devlet)."
+                        ],
+                        mnemonic: "HAFIZA ÇİVİSİ: Sinyal Koşullandırma'nın 4 Görevi = 'FİYD' -> Filtreleme, İzolasyon, Yükseltme (Amplification), Doğrusallaştırma.",
+                        trap: "SINAV TUZAĞI: Bilgisayardan dış dünyadaki sisteme geri besleme (kontrol sinyali) gönderirken ADC değil, tam tersi olan DAC (Dijital-Analog Çevirici) kullanılır!"
+                    },
+                    {
+                        title: "Siber Güvenlik İlişkisi, CIA Üçlüsü ve Saldırı Türleri",
+                        points: [
+                            "<b>Saldırı Yüzeyi (Attack Surface):</b> Sistem ne kadar çok ağa bağlı sensör, IoT ve uç nokta içeriyorsa, olası giriş kapısı (saldırı yüzeyi) o kadar büyür.",
+                            "<b>CIA Üçlüsü ve Genişletilmiş Model:</b> Temel hedef <b>Gizlilik (Confidentiality), Bütünlük (Integrity) ve Erişilebilirlik (Availability)</b> ilkeleridir. Buna <b>Kimlik Doğrulama (Authentication)</b> ve <b>Hesap Verebilirlik (Accountability)</b> eklenerek genişletilmiş güvenlik modeli oluşturulur.",
+                            "<b>Kaynak Sınırları & Çözüm:</b> Sensör ve uç cihazların işlemci gücü, bellek ve enerji (düşük pil) kaynakları sınırlı olduğundan ağır şifreleme algoritmalarını kaldıramazlar. Bu nedenle literatürde <b>Hafif Şifreleme (Lightweight Cryptography)</b> çözümleri önerilir.",
+                            "<b>Başlıca Saldırı Türleri (7 Adet):</b> 1) Ortadaki Adam (MITM), 2) Dağıtık Hizmet Dışı Bırakma (DDoS), 3) Kimlik/Sinyal Sahteciliği (Spoofing), 4) Veri Manipülasyonu ve Veri Zehirlenmesi (Data Poisoning), 5) Yeniden Oynatma Saldırıları (Replay Attacks), 6) Fiziksel Müdahale, 7) Yan Kanal Saldırıları (Side-Channel Attacks).",
+                            "<b>Kritik Altyapı Tehditleri:</b> Şifrelenmemiş HTTP, korumasız API'ler ve zayıf kimlik doğrulama fidye yazılımlarına yol açar. SCADA/DAQ sistemlerine yönelik <b>Modbus protokolü zafiyetleri</b> ve <b>Stuxnet vakası</b> tarihsel örneklerdir (enerji, su, ulaşımda yıkıcı sonuçlar)."
+                        ],
+                        mnemonic: "HAFIZA ÇİVİSİ: Küçük Sensör = Düşük Pil = Hafif Şifreleme (Lightweight Crypto). CIA + Kimlik Doğrulama + Hesap Verebilirlik.",
+                        trap: "SINAV TUZAĞI: 'Sensörlerde pil zayıf olduğu için şifreleme tamamen kapatılmalıdır' şıkkı YANLIŞTIR! Doğrusu: 'Hafif şifreleme çözümleri kullanılmalıdır'."
+                    },
+                    {
+                        title: "Mahremiyet, KVKK/GDPR ve Alınabilecek Güvenlik Önlemleri",
+                        points: [
+                            "<b>Veri Birleştirme ve Yeniden Tanımlama Riski:</b> Farklı kaynaklardan toplanan büyük hacimli sensör ve davranışsal verilerin birleştirilmesi (<b>data aggregation</b>), anonimleştirilmiş verilerden dahi bireylerin <b>yeniden tanımlanabilmesine (re-identification)</b> yol açabilir!",
+                            "<b>Hukuki Uyum (KVKK ve GDPR):</b> Türkiye'de KVKK ve AB'de GDPR; <b>açık rıza, veri minimizasyonu, amaçla sınırlılık ve hesap verebilirlik</b> ilkelerini zorunlu kılar.",
+                            "<b>Yönetişim Sorunu:</b> Farklı üretici ve protokollere sahip çok sayıda <b>heterojen cihazın</b> merkezi yönetimi ve güvenlik yamalarının zamanında uygulanması ölçek büyüdükçe zorlaşır.",
+                            "<b>Teknik Önlemler:</b> Uçtan uca şifreleme (TLS, AES), Çok Faktörlü Kimlik Doğrulama (MFA), PKI tabanlı dijital sertifikalar, Ağ segmentasyonu / VLAN, Güvenlik Duvarı ve IDS/IPS.",
+                            "<b>Mimari Yaklaşımlar:</b> Tasarımdan Güvenlik (Security by Design), Tasarımdan Mahremiyet (Privacy by Design) ve ağ içindeki hiçbir cihaza varsayılan güven tanımayan <b>Sıfır Güven (Zero Trust)</b> mimarisi.",
+                            "<b>Standartlar, Yeni Nesil & Sürekli İzleme:</b> NIST Siber Güvenlik Çerçevesi, ISO/IEC 27001 BGYS, sızma testleri. Yapay zekâ/ML tabanlı anomali tespiti, <b>Blok zinciri (Blockchain)</b> ile merkeziyetsiz ve değiştirilemez kayıt. Varsayılan parolaların değiştirilmesi, envanter takibi, farkındalık eğitimi, olay müdahale planı, log yönetimi ve <b>SIEM (Security Information and Event Management)</b>."
+                        ],
+                        mnemonic: "HAFIZA ÇİVİSİ: Anonim veriler kazanda birleşirse (Aggregation) -> Kimlikler ifşa olur (Re-identification). Değiştirilemez merkeziyetsiz kayıt -> Blok Zinciri. Hiçbir cihaza güvenme -> Zero Trust.",
+                        trap: "SINAV TUZAĞI: Verilerin anonimleştirilmiş olması %100 mahremiyet garantisi vermez; veri birleştirme (data aggregation) ile yeniden tanımlama (re-identification) yapılabilir."
+                    }
+                ]
+            },
+            {
+                id: "2",
+                pdfTitle: "2. PDF: LabVIEW Giriş, Arayüz ve LabVIEW Güvenlik Açıkları",
+                badge: "Ünite 2 • 44 Slayt",
+                color: "lvGreen",
+                sections: [
+                    {
+                        title: "LabVIEW Nedir? Temel Mimari ve Veri Akışı (Dataflow)",
+                        points: [
+                            "<b>LabVIEW Açılımı ve Tarihçesi:</b> <i>Laboratory Virtual Instrument Engineering Workbench</i>. <b>National Instruments (NI)</b> tarafından <b>1986</b> yılında piyasaya sürülmüştür.",
+                            "<b>G Dili:</b> Metin tabanlı dillerin aksine, kod satırları yerine ikon ve bağlantı kablolarından (wire) oluşan <b>'G'</b> adlı grafiksel veri akışı programlama diline dayanır.",
+                            "<b>Sanal Enstrüman (Virtual Instrument - VI):</b> Bir LabVIEW programına VI denir (uzantısı <b>.vi</b>). İki temel bileşenden oluşur: 1) <b>Ön Panel (Front Panel):</b> Kullanıcı arayüzü (Ön yüz), 2) <b>Blok Diyagram (Block Diagram):</b> Programın mantığını, fonksiyonları ve kabloları içeren arka yüz.",
+                            "<b>Veri Akışı (Dataflow) Paradigması:</b> Bir işlev bloğu (düğüm) <b>yalnızca tüm girdi verileri kendisine ulaştığında çalışır!</b> Bu yapı doğal paralel işlem yeteneği sağlar.",
+                            "<b>Donanım ve Kullanım Alanları:</b> <b>NI-DAQmx</b> sürücüsü; GPIB, USB, Ethernet, Seri Port üzerinden enstrüman kontrolü (osiloskop, multimetre). CompactRIO, myRIO, PLC ve FPGA entegrasyonu. Havacılık/Savunmada <b>ATE (Automated Test Equipment)</b>, Otomotivde <b>NVH (Gürültü-Titreşim-Sertlik)</b> analizi, Biyomedikalde EKG/EMG, <b>SpaceX Görev Kontrol Merkezi</b>. Alt programlara <b>SubVI</b> denir."
+                        ],
+                        mnemonic: "HAFIZA ÇİVİSİ:NI 1986 G Dili. VI = Front Panel (Vitrin/Ön Yüz) + Block Diagram (Mutfak/Arka Yüz). Tüm girdiler gelmeden düğüm ÇALIŞMAZ!",
+                        trap: "SINAV TUZAĞI: LabVIEW'de kodlar yukarıdan aşağıya satır sırasıyla DEĞİL, veri akışı (dataflow) sırasıyla yani girdilerin ulaştığı sırayla çalışır."
+                    },
+                    {
+                        title: "LabVIEW Siber Güvenlik İlişkisi (CVE ve CWE Kodları - ÇOK KRİTİK!)",
+                        points: [
+                            "<b>CISA Bildirimleri:</b> ABD Siber Güvenlik ve Altyapı Güvenliği Ajansı (<b>CISA</b>), endüstriyel kontrol sistemleri (ICS) kapsamında NI LabVIEW için düzenli güvenlik danışma bildirimleri yayımlar.",
+                            "<b>CVE-2025-2631 ve CVE-2025-2632:</b> LabVIEW'in veri ayrıştırma (<b>data parsing</b>) işlevindeki <b>sınır dışı yazma (out-of-bounds write, CWE-787)</b> hatalarından kaynaklanır. <b>CVSS v3.1 puanı 7,8 (Yüksek)</b> olup <b>uzaktan kod çalıştırmaya (RCE)</b> yol açabilir!",
+                            "<b>JKI Security Suite Risk Kategorileri:</b> 1) Girdi doğrulama eksikliği, 2) Koda gömülü kimlik bilgileri (hardcoded credentials), 3) Açık metin (cleartext) olarak saklanan hassas veriler.",
+                            "<b>Paralel Veri Akışı Eşzamanlılık (Concurrency) Açıkları:</b> 1) <b>Yarış durumu (Race condition – CWE-362)</b>, 2) <b>Kilitlenme (Deadlock – CWE-833)</b>, 3) <b>Paylaşılan kaynaklara uygun olmayan erişim (Improper locking – CWE-667)</b>.",
+                            "<b>Uzaktan Panel (Remote Panel) Riski ve Önlemler:</b> Ağ üzerinden erişim sağlayan Uzaktan Panel özelliği yetersiz kimlik doğrulama ile yetkisiz erişim riski doğurur. Önlem: Güncel yama, statik kod analizi, girdi doğrulama, güvenli kimlik saklama, ağ segmentasyonu ve güvenlik duvarı."
+                        ],
+                        mnemonic: "HAFIZA ÇİVİSİ: 2025 CVE'leri = 2631 & 2632 -> Sınır Dışı Yazma (CWE-787) -> Puan 7.8 (787'nin ilk iki rakamı 7.8!). Eşzamanlılık = 362 (Yarış/Race), 833 (Deadlock), 667 (Locking).",
+                        trap: "SINAV TUZAĞI: Hoca CWE numaralarını eşleştirmeli sorabilir: CWE-787 (Out-of-bounds write), CWE-362 (Race condition), CWE-833 (Deadlock), CWE-667 (Improper locking)."
+                    },
+                    {
+                        title: "Kontrol, Gösterge, Sabit ve Araç Çubuğu Kısayolları",
+                        points: [
+                            "<b>Control (Kontrol):</b> Ön panelde kullanıcıdan veri girişi alır (<b>Input/Girdi</b>). Blok diyagramda <b>kaynak</b> terminalidir (kalın çerçeveli, ok sağda). Çalışma zamanında kullanıcı değiştirebilir (Örn: Buton, switch, slider, knob, dial).",
+                            "<b>Indicator (Gösterge):</b> Ön panelde sonucu görüntüler (<b>Output/Çıktı</b>). Blok diyagramda <b>hedef</b> terminalidir (ince çerçeveli, ok solda). Kullanıcı değiştiremez (Örn: LED, meter, gauge, thermometer, waveform chart/graph, table).",
+                            "<b>Constant (Sabit):</b> Yalnızca blok diyagramda yer alır, çalışma zamanında değişmeyen sabit değerdir.",
+                            "<b>Dönüşüm & Görünüm:</b> Sağ tıklayıp <b>Change to Indicator / Control / Constant</b> ile birbirine dönüştürülebilir. Sağ tık <b>View As Icon</b> kaldırılırsa blok diyagramda küçük dikdörtgen (DBL, TF, abc) olarak görünür. <b>Visible Items ➔ Label</b> ile isim etiketi açılır.",
+                            "<b>Kısayollar:</b> <b>Ctrl + N</b> (Yeni VI), <b>Ctrl + T</b> (Front Panel ve Block Diagram yan yana hizala), <b>Ctrl + K</b> (Bir katman öne), <b>Ctrl + J</b> (Bir katman geri), <b>Ctrl + Shift + K</b> (En öne), <b>Ctrl + Shift + J</b> (En arkaya).",
+                            "<b>Araç Çubuğu Düğmeleri:</b> 1) <b>Run (Beyaz Ok):</b> Kodu 1 defa çalıştırır. <b>Kırık Ok (Broken Run):</b> Programsal hata / yanlış kablo vardır, çalışmaz! 2) <b>Continuous Run (Dönen Oklar):</b> Sürekli çalıştırır (Tavsiye edilmez, yerine döngü kullanılmalı!). 3) <b>Abort (Kırmızı Dur):</b> Acil sonlandırma. 4) <b>Pause (II):</b> Geçici durdurma.",
+                            "<b>Blok Diyagram Araçları:</b> <b>Highlight Execution (Ampul):</b> Veri akışını animasyonlu izletir. <b>Retain Wire Values:</b> Kablolara prob eklemeyi sağlar. <b>Clean Up Diagram (Fırça):</b> Kodu otomatik düzenler. <b>Show Context Help (?):</b> Üzerine gelinen nesnenin yardım penceresini açar. Ön panelde: <b>Align Objects</b> (Hizalama), <b>Distribute Objects</b> (Mesafe eşitleme), <b>Resize Objects</b> (En büyük/küçüğe göre boyut eşitleme)."
+                        ],
+                        mnemonic: "HAFIZA ÇİVİSİ: Çalıştırma sırası (PDF 2 S.36): 1=Tek Seferlik Çalıştır, 2=Sürekli Çalıştır, 3=Sonlandır (Abort), 4=Geçici Durdur (Pause).",
+                        trap: "SINAV TUZAĞI: Continuous Run düğmesiyle sürekli çalıştırmak TAVSİYE EDİLMEZ; bunun yerine kod bir döngü (While/For Loop) içine alınmalıdır!"
+                    }
+                ]
+            },
+            {
+                id: "3",
+                pdfTitle: "3. PDF: Veri Tipleri, Kablo Renkleri, Buton Mekanikleri ve Fonksiyonlar",
+                badge: "Ünite 3 • 24 Slayt",
+                color: "lvOrange",
+                sections: [
+                    {
+                        title: "Veri Tipleri ve Kablo Renkleri Tablosu",
+                        points: [
+                            "<b>Numeric (Sayısal):</b> Ondalıklı sayılar (Single/Double/Extended Float - DBL) <b>TURUNCU</b>; Tam sayılar (Integer I8, I16, I32, I64, U8...) <b>MAVİ</b> renkte gösterilir.",
+                            "<b>Boolean:</b> True/False değer alır (buton, LED). <b>YEŞİL</b> renkte (kesikli çizgi) gösterilir.",
+                            "<b>String:</b> Metin/karakter dizisi. <b>PEMBE</b> renkte gösterilir.",
+                            "<b>Array (Dizi):</b> Aynı veri tipinden birden çok elemanı tutar. İçerdiği tipin rengiyle, <b>kalın kenarlıklı</b> olarak gösterilir (1D dizi kalın tek çizgi, 2D dizi çift çizgi).",
+                            "<b>Cluster (Küme):</b> Farklı veri tiplerini tek bir yapıda birleştirir (<b>C dilindeki struct benzeri</b>). İçeriğine göre <b>Kahverengi</b> (nümerikse) veya <b>Pembe</b> renkte gösterilir.",
+                            "<b>Enum (Enumerated):</b> Önceden tanımlı, isimlendirilmiş seçenekler kümesidir. <b>Mavi-yeşil (Turkuaz)</b> renktedir.",
+                            "<b>Dinamik (Dynamic Data Type):</b> Express VI'lar arasında sinyal/ölçüm verisi taşır, <b>Koyu Mavi</b> renktedir.",
+                            "<b>Diğer Kablo Renkleri (PDF 3 S.12 Tablosu):</b> Path ve Referans = <b>Koyu Yeşil</b> (Kümesi Pembe), Donanımsal Kaynak ve Variant = <b>Mor</b> (Kümesi Pembe), Waveform = <b>Kahverengi</b>, Class = <b>Kırmızı</b>.",
+                            "<b>Kontrol Görünüm Stilleri (4 Mod):</b> <b>Modern, Silver, System, Classic</b>."
+                        ],
+                        mnemonic: "HAFIZA ÇİVİSİ: Turuncu=Virgüllü (Float), Mavi=Tam Sayı (Int), Yeşil=Boolean, Pembe=String, Kahverengi=Cluster/Waveform, Kırmızı=Class, Mor=Variant.",
+                        trap: "SINAV TUZAĞI: Array (Dizi) farklı tipleri birleştirmez, AYNI veri tipinden çoklu eleman tutar! Farklı veri tiplerini birleştiren yapı CLUSTER (Küme) yapısıdır."
+                    },
+                    {
+                        title: "Butonların 6 Çalışma Biçimi (Mechanical Action)",
+                        points: [
+                            "<b>1. Switch When Pressed:</b> Düğmeye her tıkladığınızda (basıldığı an) değeri kalıcı değişir. <b>Lamba düğmesi</b> gibi çalışır.",
+                            "<b>2. Switch When Released:</b> Değer, fare butonu <b>bırakıldığında</b> kalıcı olarak değişir.",
+                            "<b>3. Switch Until Released:</b> Tıklandığında değişir ve fare butonu <b>bırakılana kadar</b> o şekilde kalır, bırakılınca eski haline döner. <b>Kapı zili</b> gibi çalışır!",
+                            "<b>4. Latch When Pressed:</b> Tıklandığında değişir, <b>VI onu bir defa okuyana kadar</b> o şekilde kalır ve ilk haline geri döner.",
+                            "<b>5. Latch When Released:</b> Fare butonu <b>bırakıldığında</b> değişir, <b>VI onu bir defa okuyana kadar</b> kalır ve ilk haline döner (OK ve Stop butonlarının varsayılan davranışı).",
+                            "<b>6. Latch Until Released:</b> Tıklandığında değişir, <b>VI onu bir defa okuyana kadar VEYA fare butonu bırakılana kadar</b> kalır ve ilk haline döner."
+                        ],
+                        mnemonic: "HAFIZA ÇİVİSİ: Switch = VI okusa da kendi kendine dönmez (Lamba / Kapı zili). Latch = Mandal demektir, LabVIEW VI onu 1 kez okuyunca otomatik eski haline atar!",
+                        trap: "SINAV TUZAĞI: 'Kapı zili gibi çalışan buton modu hangisidir?' sorusunun cevabı Latch değil, 'Switch Until Released' modudur (PDF 3 - Sayfa 7)."
+                    },
+                    {
+                        title: "5 Yanlış Kablo Bağlantısı ve Sıcaklık Dönüşüm Örneği",
+                        points: [
+                            "<b>Blok Diyagramda 5 Yanlış Kablo Bağlantısı (PDF 3 S.13):</b><br>a) <b>Kontrolü kontrole bağlamak</b> (İki giriş birbirine bağlanamaz),<br>b) <b>Farklı tip değişkenleri birbirine bağlamak</b> (Örn: Sayıyı metin/boolean göstergesine bağlamak),<br>c) <b>Hattın kaynağının olmaması</b> (Boşta kalan kablo ucu),<br>d) <b>Bir hatta birden fazla kaynak bağlanması</b> (Çakışma),<br>e) <b>Hattın kendine geri gelmesi</b> (Döngüsüz geri besleme).",
+                            "<b>Temel Fonksiyon Grupları:</b> Numeric (Matematik), Boolean (AND, OR, NOT, XOR), Comparison (Equal?, Greater?, Less?), String (<b>Concatenate</b>=Birleştirme, <b>Substring</b>=Alt dize), Array (<b>Array Size</b>=Boyut, İndeksleme), Cluster (<b>Bundle/Unbundle</b>=Eleman ekleme/ayırma), Timing (Wait, Tick Count), File I/O, SubVI.",
+                            "<b>Termometre Örneği (PDF 3 S.18-21):</b> Silver paletinden termometre eklenir, <b>Ctrl tuşu basılıyken sürüklenerek</b> kopyalanır. Sağ tık <b>Visible Items ➔ Digital Display</b> ile sayısal kutusu açılır. Formüller:<br>• <b>Kelvin (K)</b> = C + 273<br>• <b>Reomür (R)</b> = C * 0,8<br>• <b>Fahrenheit (F)</b> = C * 1,8 + 32 (Örn: C=50 ise K=323, R=40, F=122)."
+                        ],
+                        mnemonic: "HAFIZA ÇİVİSİ: Cluster paketleme = Bundle, paketi açma = Unbundle. Metin birleştirme = Concatenate. 50°C = 323K = 40R = 122F.",
+                        trap: "SINAV TUZAĞI: Bir kontrolden çıkan kabloyu iki farklı göstergeye (Indicator) bağlamak DOĞRUDUR; ancak iki farklı kontrolü (Control) aynı kabloya bağlamak YANLIŞTIR (Birden fazla kaynak hatası)!"
+                    }
+                ]
+            },
+            {
+                id: "4",
+                pdfTitle: "4. PDF: Döngüler (For Loop & While Loop) ve Zamanlayıcılar",
+                badge: "Ünite 4 • 26 Slayt",
+                color: "lvBlue",
+                sections: [
+                    {
+                        title: "For Loop Yapısı, Terminalleri ve İç İçe (Nested) Döngüler",
+                        points: [
+                            "<b>For Loop:</b> Önceden belirlenen sabit bir tekrar sayısı kadar çalışan döngüdür (Structures paletindedir).",
+                            "<b>N (Loop Count) Terminali:</b> Sol üst köşededir. Döngünün kaç kez çalışacağını belirtir.",
+                            "<b>i (Loop Iteration) Terminali:</b> Sol alt köşededir. Mevcut tur sayısını verir. <b>0'dan başlar</b> ve her turda 1 artar (0, 1, 2... N-1).",
+                            "<b>N=10 Örneği (PDF 4 S.5):</b> N=10 verildiğinde i değeri 0'dan başlayıp 10 adım atar ve Front Panel'deki göstergede <b>en son 9 değerini</b> görürüz!",
+                            "<b>Auto-Indexing:</b> Döngüye dizi bağlandığında elemanları tek tek işler, çıkışta sonuçları otomatik dizi hâlinde toplar. <b>Tünel (Tunnel):</b> Döngü sınırındaki veri giriş/çıkış noktalarıdır.",
+                            "<b>İç İçe For Loop (Nested Loop):</b> Dış döngü M kez, iç döngü N kez çalışıyorsa toplam iterasyon sayısı <b>M × N</b> olur. Görüntü işleme (piksel tarama), 2B matris/tablo (dış=satır, iç=sütun) ve çok kanallı veri toplamada kullanılır."
+                        ],
+                        mnemonic: "HAFIZA ÇİVİSİ: For Loop'ta Son İndeks = N - 1. N=10 ise ekranda 9 yazar! Dış N=5, İç N=4 ise toplam 5x4 = 20 tur döner.",
+                        trap: "SINAV TUZAĞI: PDF 4 Sayfa 6'da özel bir ifade vardır: 'Highlight Execution çalışan programı yavaşlatmaz, sadece daha yavaş izlenmesini sağlar. Bir programı yavaşlatmak için zamanlayıcı (Wait) kullanılması gerekir!'"
+                    },
+                    {
+                        title: "Zamanlayıcılar (Timing Paleti) ve Tarih/Saat Fonksiyonları",
+                        points: [
+                            "<b>Wait (ms):</b> Kol saati simgesi. Sol terminalden girilen değer kadar <b>milisaniye (ms)</b> bekler (Örn: 500 yazılırsa 0.5 saniye bekler).",
+                            "<b>Wait Until Next ms Multiple:</b> Metronom simgesi. İç saat, girilen milisaniyenin katsayısına eşit olana kadar bekler.",
+                            "<b>Time Delay:</b> Kum saati simgesi (Express VI). Belirtilen <b>saniye (s)</b> kadar bekleme sağlar!",
+                            "<b>Tick Count (ms):</b> ms olarak zaman bilgisi verir. <b>Gerçek zaman ve tarih bilgisine dönüştürülemez!</b>",
+                            "<b>High Resolution Relative Seconds.vi:</b> Virgülden sonra <b>14 basamak hassasiyetle</b> zamanı ölçmeye yarar.",
+                            "<b>Tarih/Saat Fonksiyonları:</b> <b>Get Date/Time In Seconds</b> (O anki tarih/saat bilgisini verir), <b>Get Date/Time String</b> (Tarih ve saati string veriye çevirir), <b>Date/Time To Seconds</b> (Kümeden timestamp'a), <b>Seconds To Date/Time</b> (Timestamp'tan kümeye), <b>Elapsed Time</b> (Belirtilen sürenin geçip geçmediğini verir)."
+                        ],
+                        mnemonic: "HAFIZA ÇİVİSİ: Wait (ms) = Milisaniye (Kol saati). Time Delay = Saniye (Kum saati). 14 basamak hassasiyet = High Resolution Relative Seconds.",
+                        trap: "SINAV TUZAĞI: Tick Count (ms) gerçek tarih ve saate DÖNÜŞTÜRÜLEMEZ! Gerçek tarih/saat için Get Date/Time In Seconds kullanılır."
+                    },
+                    {
+                        title: "While Loop ve Stop Butonu İçeride/Dışarıda Tuzağı",
+                        points: [
+                            "<b>While Loop:</b> Belirli bir koşul sağlandığı (veya sağlanmadığı) sürece belirsiz sayıda tekrarlanan döngüdür.",
+                            "<b>En Az Bir Kez Çalışma Kuralı:</b> Koşul kontrolü döngü gövdesi çalıştıktan sonra yapıldığından, While Loop içeriği başlangıç koşulundan bağımsız olarak <b>EN AZ BİR KEZ ÇALIŞIR!</b>",
+                            "<b>Conditional Terminal (Sağ Alt Köşe):</b> Varsayılan ayarda <b>Stop if True</b> (True gelince durur); tersi ayarda <b>Continue if True</b> (True olduğu sürece devam eder, False gelince durur).",
+                            "<b>A ve B Diyagramı Farkı (PDF 4 S.18 - ÇOK ÖNEMLİ):</b><br>• <b>A Diyagramı (Stop Döngü İÇİNDE):</b> Kontrol her iterasyonda yeniden okunur. Kullanıcı çalışırken basarsa döngü o anda gerçek zamanlı durur.<br>• <b>B Diyagramı (Stop Döngü DIŞINDA - Tünelli):</b> Döngü dışındaki kontrolün değeri döngü başlamadan önce <b>sadece 1 kez okunur</b> ve tüm turlar boyunca sabit kalır! Döngü çalışırken kullanıcı dışarıdaki stop butonuna bassa bile değişiklik içeri yansımaz!",
+                            "<b>Örnekler:</b> Analog Saat (PDF 4 S.22): Dış döngü N=24 (Saat), orta döngü N=61 (Dakika), iç döngü N=61 (Saniye ve içinde 1000 ms Wait Until Next ms Multiple). Waveform Chart örneğinde (S.23) rastgele sayı (0-1 arası zar ikonu) 10 ile çarpılıp grafiğe basılır, i değeri veya Stop butonu OR (Veya) kapısıyla döngüyü durdurur."
+                        ],
+                        mnemonic: "HAFIZA ÇİVİSİ: While Loop = Do-While gibidir, önce iş yapar sonra sorar (En az 1 kez çalışır). Stop butonu dışarıdaysa kör olur, basıldığını görmez!",
+                        trap: "SINAV TUZAĞI: PDF 4 S.21'deki örneğe dikkat: While Loop'ta i=10 olunca durması istenmiş ve i*2 hesaplanmış; i=10 olduğunda 10*2=20 üretir ve durur (Toplam 11 tur: 0..10). Yanındaki For Loop'ta da 20 çıkması için N=11 verilmiştir (i en son 10 olur, 10*2=20)!"
+                    }
+                ]
+            },
+            {
+                id: "5",
+                pdfTitle: "5. PDF: Case Structure (Koşul Yapısı) ve Tünel Kuralları",
+                badge: "Ünite 5 • 19 Slayt",
+                color: "lvPink",
+                sections: [
+                    {
+                        title: "Case Structure Yapısı, Selector Tipleri ve Default Case",
+                        points: [
+                            "<b>Case Structure:</b> Seçici (selector) değere göre birden fazla alt diyagramdan (case) <b>yalnızca birinin</b> çalıştırılmasını sağlayan, metin dillerindeki <b>if-else / switch-case</b> karşılığı olan yapıdır (Structures paletindedir).",
+                            "<b>Case Selector (?) Terminali:</b> Sol kenardaki soru işaretli küçük kutudur. Buraya <b>Boolean (True/False), Integer (Tam sayı), String (Metin) veya Enum</b> bağlanabilir.",
+                            "<b>Default Case Zorunluluğu:</b> Integer, String veya Enum gibi çok değerli seçicilerde tanımlanmamış diğer tüm değerler için çalışacak bir <b>'Default'</b> case bulunması <b>ZORUNLUDUR!</b> (Boolean'da sadece True ve False olduğu için Default gerekmez).",
+                            "<b>Aralık Yazım Kuralları (PDF 5 S.5 & S.7):</b><br>• <code class='text-lvCyan'>2..4, 6</code> ➔ 2, 3, 4 ve 6 değerlerinde çalışır.<br>• <code class='text-lvCyan'>7..</code> veya <code class='text-lvCyan'>25..</code> ➔ 7 (veya 25) ve üzerindeki tüm sayılarda çalışır.",
+                            "<b>Yeni Sahne Ekleme/Silme:</b> Üst şeride sağ tıklayıp <b>Add Case After</b> (sonrasına ekle), <b>Add Case Before</b> (öncesine ekle), <b>Duplicate Case</b> (çoğalt) veya <b>Delete This Case</b> (sil) seçilir."
+                        ],
+                        mnemonic: "HAFIZA ÇİVİSİ: İki nokta (..) 'den e kadar' demektir: 3..20 (3'ten 20'ye kadar). Sonunda sayı yoksa (25..) 25'ten sonsuza kadar!",
+                        trap: "SINAV TUZAĞI: Aynı anda birden fazla case ÇALIŞAMAZ! Birbirini dışlayan (mutually exclusive) koşullu işlemler içindir."
+                    },
+                    {
+                        title: "Çıkış Tünelleri ve 'Use Default If Unwired' Tablosu",
+                        points: [
+                            "<b>Çıkış Tüneli Kuralı:</b> Bir çıkış tüneli kullanılacaksa, <b>tüm case'lerde o tünele bir değer bağlanmış olmalıdır!</b> Eğer tek bir case'de bile boş bırakılırsa tünelin ortası <b>beyaz (boş kare)</b> görünür ve VI çalıştırılamaz (Run oku kırılır).",
+                            "<b>Use Default If Unwired:</b> Eksik kalan çıkış tüneline sağ tıklayıp <b>'Use Default If Unwired'</b> seçilirse program çalışır ve kablo bağlanmayan case'lerde veri tipinin varsayılan (default) değerini gönderir.",
+                            "<b>Varsayılan Değerler Tablosu (PDF 5 S.10 - KESİN SORU):</b><br>• <b>Nümerik:</b> <code class='text-lvOrange font-bold'>0</code><br>• <b>Boolean:</b> <code class='text-lvGreen font-bold'>False</code><br>• <b>String:</b> <code class='text-lvPink font-bold'>Boş (\"\")</code>",
+                            "<b>Nesne Konumlandırma Uyarısı (PDF 5 S.12):</b> Bir nesne (ör. Sayı Çıktı Y göstergesi) birden fazla seçenekte (hem True hem False'ta) kullanılacaksa, o nesne Case Structure'ın <b>İÇİNE DEĞİL DIŞINA</b> konumlandırılmalı ve tünelle bağlanmalıdır! Kopyala-yapıştır yapılırsa aynı nesne değil, aynı türden 2 farklı nesne oluşur.",
+                            "<b>SUBÜ / BTMYO Kısaltma Örneği (PDF 5 S.16):</b> String girişine 'SUBÜ' yazılırsa 'Sakarya Uygulamalı Bilimler Üniversitesi', 'BTMYO' yazılırsa 'Bilişim Teknolojileri Meslek Yüksekokulu', başka bir şey yazılırsa Default case ('KISALTMA GİRİNİZ / DEFAULT DEĞER') çalışır."
+                        ],
+                        mnemonic: "HAFIZA ÇİVİSİ: Unwired Default 3'lüsü: Sayı=0, Boolean=False, Metin=\"\" (Boş). İçi beyaz tünel = Kırık Ok!",
+                        trap: "SINAV TUZAĞI: Göstergeyi hem True hem False içine kopyala-yapıştır yapmak YANLIŞTIR! Gösterge dışarıda tek bir tane olmalı ve tünel ile bağlanmalıdır."
+                    }
+                ]
+            },
+            {
+                id: "6",
+                pdfTitle: "6. PDF: Local Variable, Flat Sequence ve Select Node",
+                badge: "Ünite 6 • 19 Slayt",
+                color: "lvBrown",
+                sections: [
+                    {
+                        title: "Local Variable (Yerel Değişken) ve Güvenlik Riskleri",
+                        points: [
+                            "<b>Local Variable Nedir?</b> Aynı blok diyagram üzerindeki bir kontrol veya göstergenin değerine, asıl terminaline kablo çekmeden başka bir noktadan <b>okuma (Read)</b> veya <b>yazma (Write)</b> imkânı sağlayan özel düğümdür (Ev simgesi).",
+                            "<b>Nasıl Oluşturulur?</b> Nesneye sağ tıklayıp <b>Create ➔ Local Variable</b> seçilir (veya Structures paletinden alınır). Bağımsız bir kopya değil, asıl nesneye işaret eden bir referanstır.",
+                            "<b>Kısıt Kaldırma Özelliği:</b> Normalde bir kontrol yalnızca okunabilir, bir gösterge yalnızca yazılabilirken; Local Variable sayesinde <b>bir kontrole programatik olarak değer yazılabilir, bir göstergenin değeri okunabilir!</b> (Sağ tık: <b>Change To Read / Change To Write</b>).",
+                            "<b>Riskleri:</b> 1) Aynı değişkene birden fazla paralel yerden aynı anda yazılırsa <b>Yarış Durumu (Race Condition)</b> oluşur! 2) Aşırı kullanımı <b>bellek tüketimini artırır</b> ve okunabilirliği bozar.",
+                            "<b>Güvenli Alternatifleri (PDF 6 S.4):</b> Paralel döngüler arasında güvenli veri paylaşımı için Local Variable yerine <b>Shift Register, Notifier, Queue veya Functional Global Variable (FGV)</b> tercih edilmelidir."
+                        ],
+                        mnemonic: "HAFIZA ÇİVİSİ: Local Variable = Ev İkonu. Kontrolü yazılabilir, Göstergeyi okunabilir yapar! Ama paralel döngüde Race Condition (Yarış Durumu) tehlikesi yaratır.",
+                        trap: "SINAV TUZAĞI: İki farklı karede (ör. Flat Sequence'in 1. ve 2. karesinde) aynı Boolean göstergeye doğrudan kablo çekersen 'Birden fazla kaynak' hatası (X) alırsın (PDF 6 S.5); çözümü 2. karede Local Variable kullanmaktır!"
+                    },
+                    {
+                        title: "Flat Sequence Structure ve Select Node (s? t:f)",
+                        points: [
+                            "<b>Flat Sequence Structure:</b> İçerdiği kareleri (<b>frame</b>) kesin bir sırayla, <b>soldan sağa doğru art arda</b> çalıştıran kontrol yapısıdır (Film şeridi görünümü, Structures paletindedir).",
+                            "<b>Neden Gerekli?</b> Veri akışı (dataflow) modelinde birbirine kablo ile bağımlı olmayan iki işlem varsayılan olarak paralel/rastgele sırada çalışabilir. Flat Sequence 'önce şunu yap, sonra bunu yap' sırasını garanti eder (Örn: 1. karede başlangıç zamanını al, 2. karede işlemi yap, 3. karede bitiş zamanını alıp süreyi ölç).",
+                            "<b>Flat Sequence vs Stacked Sequence Farkı (PDF 6 S.9-10):</b><br>• <b>Flat Sequence:</b> Tüm kareler yan yana aynı anda görünür, okunabilirliği yüksektir ve günümüzde bu tercih edilir.<br>• <b>Stacked Sequence:</b> Kareleri üst üste dizer (yalnızca biri görünür). Kareler arası veri aktarımı için <b>Sequence Local</b> (kenardaki sarı ok simgesi) kullanılır.",
+                            "<b>Çay Demleme & Trafik Işığı Örneği (PDF 6 S.12-13):</b><br>• Çay: 1. Kare (BAŞLAMADI - 2000 ms) ➔ 2. Kare (DEMLENİYOR - 3500 ms) ➔ 3. Kare (DEMLENDİ - 5000 ms).<br>• Trafik Işığı: 1. Kare (Kırmızı yanar, N=20 döngüyle 20'den geriye sayar) ➔ 2. Kare (Kırmızı+Sarı birlikte 2000 ms yanar) ➔ 3. Kare (Yeşil yanar, N=10 döngüyle 10'dan geriye sayar).",
+                            "<b>Select Node (s? t:f) (PDF 6 S.14-16):</b> Comparison paletindedir. Ortadaki <b>s</b> (boolean) girişine True gelirse üstteki <b>t</b> değerini, False gelirse alttaki <b>f</b> değerini çıkışa aktarır."
+                        ],
+                        mnemonic: "HAFIZA ÇİVİSİ: Flat = Yan yana açık film şeridi (Tercih edilen). Stacked = Üst üste gizli kareler. Select Node = Üçgen içinde 't / ? / f' (Ortası True ise üst, False ise alt geçer).",
+                        trap: "SINAV TUZAĞI: Trafik ışığı örneğinde (PDF 6 S.13) geri sayım yapmak için For Loop içinde `20 - i` (ve yeşil ışıkta `10 - i`) çıkarma işlemi yapılıp 'sayac' Local Variable'ına yazılmıştır!"
+                    }
+                ]
+            },
+            {
+                id: "7",
+                pdfTitle: "7. PDF: Matematiksel İşlemler, Expression Node ve Formula Node",
+                badge: "Ünite 7 • 20 Slayt",
+                color: "lvCyan",
+                sections: [
+                    {
+                        title: "Numeric Paleti Matematik Blokları ve Yuvarlama Örneği",
+                        points: [
+                            "<b>Temel Matematik Blokları:</b> Add (+), Subtract (-), Multiply (×), Divide (÷), <b>Quotient & Remainder</b> (Bölüm ve Kalan), Increment (+1), Decrement (-1), Add/Multiply Array Elements (Σ / Π), <b>Compound Arithmetic</b> (Çoklu işlem), Absolute Value (|x| - Mutlak değer), Square Root (√x), Square (x²),Power of X (x^y), Negate (-x), Reciprocal (1/x), Sign (İşaret: -1, 0, +1).",
+                            "<b>Yuvarlama Blokları:</b> <b>Round To Nearest ([])</b> (En yakın tam sayıya yuvarlar), <b>Round Toward -Infinity (⌊⌋)</b> (Aşağı yuvarlar), <b>Round Toward +Infinity (⌈⌉)</b> (Yukarı yuvarlar).",
+                            "<b>Denklem Örneği (PDF 7 S.4):</b> <code class='text-lvCyan'>y = x² - x + |1 - x|</code> (Dışarıdan girilen x değerlerini önce tam sayıya yuvarlasın): X kontrolü önce <b>[] (Round To Nearest)</b> bloğuna girer, çıkan tam sayı hem x² bloğuna hem çıkarma bloğuna hem de 1 ile çıkarılıp <b>|| (Absolute Value)</b> mutlak değer bloğuna girer ve en sonda toplanır."
+                        ],
+                        mnemonic: "HAFIZA ÇİVİSİ: [] = En yakına yuvarla (Round to Nearest). || = Mutlak değer (Absolute Value). -x = Negate. 1/x = Reciprocal.",
+                        trap: "SINAV TUZAĞI: Diyagram okumada `[]` sembolünü dizi (array) sanma! Numeric üçgeni içindeki `[]` sembolü 'Round To Nearest' (Tam sayıya yuvarlama) fonksiyonudur (PDF 7 S.4)."
+                    },
+                    {
+                        title: "Expression Node vs Formula Node (Büyük Karşılaştırma)",
+                        points: [
+                            "<b>Expression Node (Numeric Paletinde - [EXPR]):</b><br>• <b>Tek giriş ve tek çıkış</b> vardır (yalnızca tek değişkenli, <b>x</b> cinsinden ifadeler).<br>• Tek satırlık basit formüller içindir (Örn: <code class='text-lvOrange'>x*x+2*x+5</code> veya <code class='text-lvOrange'>pow(x,2)+2*x+5</code>). Noktalı virgül konulmaz.",
+                            "<b>Formula Node (Structures Paletinde - Kutulu Yapı):</b><br>• <b>Çoklu giriş ve çoklu çıkış</b> destekler (Kenara sağ tıklayıp <b>Add Input / Add Output</b> ile eklenir).<br>• Çok satırlı, C benzeri sözdizimiyle yazılır. <b>Her satır noktalı virgül (;) ile bitmelidir!</b>",
+                            "<b>İkisinde de Kullanılan Fonksiyonlar (PDF 7 S.11 Tablosu):</b><br>• Aritmetik: <code class='text-slate-300'>+, -, *, /, ^, **</code><br>• Trigonometrik: <code class='text-slate-300'>sin, cos, tan, asin, acos, atan, sinh, cosh, tanh</code><br>• Üstel/Logaritmik: <code class='text-slate-300'>exp(x), ln(x), log(x), log2(x), sqrt(x), pow(x,y)</code><br>• Yuvarlama/İşaret: <code class='text-slate-300'>abs(x), ceil(x), floor(x), int(x), sign(x)</code>",
+                            "<b>YALNIZCA Formula Node'da Kullanılanlar (Çok Önemli!):</b><br>• Diğer Fonksiyonlar: <code class='text-lvGreen font-bold'>min(x,y), max(x,y), mod(x,y), rand()</code> (Çünkü iki değişkenli veya parametresizdir!)<br>• Kontrol Yapıları: <code class='text-lvGreen font-bold'>if (...) {}, else {}, for (...) {}, while (...) {}</code> ve C tipi koşul operatörü <code class='text-lvGreen font-bold'>(koşul) ? doğru : yanlış;</code>",
+                            "<b>Slayt Örnekleri (PDF 7 S.13-17):</b><br>• <b>Eşkenar Üçgen (S.13):</b> <code class='text-lvCyan'>CEVRE=3*a; h=(a/2)*sqrt(3); ALAN=a*h/2;</code> (a=8 için Çevre=24, h=6.9282, Alan=27.7128).<br>• <b>Koni Hacim ve Yüzey Alanı (S.16):</b> <code class='text-lvCyan'>H=(1/3)*pi*(r**2)*h; YA=pi*r*sqrt((r**2)+(h**2));</code><br>• <b>Vize/Final Harf Notu (S.17):</b> Vize1 * 0.3 + Vize2 * 0.3 + Final * 0.4 toplanır. <b>Bool to (0,1) [?1:0]</b> bloğu True ise 1, False ise 0 üretir; katsayılarla çarpılıp Case Structure üzerinden AA (85+), BA (75-85), BB (65-75), CB (55-65), CC (45-55), DC (35-45), DD (25-35), FF (0-25) harf notunu verir."
+                        ],
+                        mnemonic: "HAFIZA ÇİVİSİ: Tek değişken (x) ve tek satır = Expression Node (Numeric'te). Çok değişken (a,b,c), noktalı virgül (;) ve if/for/while/min/max = Formula Node (Structures'ta)!",
+                        trap: "SINAV TUZAĞI: Formula Node içinde satır sonuna noktalı virgül (;) koymayı unutursan VI ÇALIŞMAZ! Ayrıca min(x,y), max(x,y), mod(x,y) iki değişken aldığı için Expression Node'da KULLANILAMAZ!"
+                    }
+                ]
+            }
+        ];
+
+        // ----------------------------------------------------
+        // 2. WIRE SIMULATOR DATA
+        // ----------------------------------------------------
+        const WIRE_DATA = [
+            { id: "dbl", name: "Numeric (Float / DBL)", color: "#ff7b00", colorName: "Turuncu", terminal: "DBL", border: "border-[#ff7b00]", defaultVal: "0", desc: "Ondalıklı sayılar (Single, Double, Extended Float). Termometre ve kesirli ölçümlerde varsayılan tiptir." },
+            { id: "i32", name: "Numeric (Integer / I32)", color: "#0095ff", colorName: "Mavi", terminal: "I32", border: "border-[#0095ff]", defaultVal: "0", desc: "Tam sayılar (I8, I16, I32, I64, U8...). Döngülerin N ve i terminalleri mavi tam sayıdır." },
+            { id: "bool", name: "Boolean (True/False)", color: "#00d647", colorName: "Yeşil (Noktalı)", terminal: "TF", border: "border-[#00d647]", defaultVal: "False", desc: "Mantıksal True/False verisi (Butonlar, Switch, LED, Karşılaştırma çıkışları)." },
+            { id: "str", name: "String (Metin)", color: "#ff42b3", colorName: "Pembe", terminal: "abc", border: "border-[#ff42b3]", defaultVal: '"" (Boş Metin)', desc: "Karakter dizisi ve metin verileri. Kümesi (Cluster) de pembe renktedir." },
+            { id: "cluster", name: "Cluster / Waveform", color: "#b56e28", colorName: "Kahverengi / Pembe", terminal: "[ ]", border: "border-[#b56e28]", defaultVal: "Küme içi varsayılanlar", desc: "Farklı veri tiplerini tek yapıda birleştirir (C'deki struct gibi). Bundle/Unbundle ile işlenir." },
+            { id: "enum", name: "Enum (Enumerated)", color: "#00e5ff", colorName: "Mavi-Yeşil (Turkuaz)", terminal: "Enum", border: "border-[#00e5ff]", defaultVal: "İlk Eleman (0)", desc: "Önceden tanımlı, isimlendirilmiş seçenekler kümesinden bir değer tutar." },
+            { id: "dynamic", name: "Dynamic Data Type", color: "#3b82f6", colorName: "Koyu Mavi", terminal: "DDT", border: "border-blue-600", defaultVal: "Boş Sinyal", desc: "Express VI'lar arasında sinyal ve ölçüm verisini taşımak için kullanılan özel tip." },
+            { id: "path", name: "Path / Refnum", color: "#15803d", colorName: "Koyu Yeşil", terminal: "Path", border: "border-green-700", defaultVal: "<Not A Path>", desc: "Dosya yolu (Path) ve dosya/donanım referansı (Refnum). Kümesi pembedir." },
+            { id: "variant", name: "Variant / Donanım", color: "#a855f7", colorName: "Mor", terminal: "Var", border: "border-purple-500", defaultVal: "Empty Variant", desc: "Tip bağımsız genel veri (Variant) ve donanımsal kaynak kabloları." },
+            { id: "class", name: "LabVIEW Class", color: "#ef4444", colorName: "Kırmızı", terminal: "LvClass", border: "border-red-500", defaultVal: "Default Object", desc: "Nesne yönelimli LabVIEW sınıf (Class) verisi." }
+        ];
+
+        // ----------------------------------------------------
+        // 3. MECHANICAL ACTION SIMULATOR DATA
+        // ----------------------------------------------------
+        const MECH_ACTIONS = [
+            { id: "sw_pressed", name: "Switch When Pressed", desc: "Düğmeye her tıkladığınızda (bastığınız an) değeri kalıcı değişir. Lamba düğmesi gibi çalışır (PDF 3 S.7)." },
+            { id: "sw_released", name: "Switch When Released", desc: "Kontrolün değeri fare butonu bırakıldığında kalıcı olarak değişir." },
+            { id: "sw_until", name: "Switch Until Released", desc: "Tıklandığında değişir ve fare butonu bırakılana kadar o şekilde kalır; bırakınca döner. Kapı zili gibi çalışır!" },
+            { id: "lt_pressed", name: "Latch When Pressed", desc: "Tıklandığında değişir, LabVIEW VI onu bir defa okuyana kadar o şekilde kalır ve ilk haline geri döner." },
+            { id: "lt_released", name: "Latch When Released", desc: "Fare butonu bırakıldığında değişir, VI onu bir defa okuyana kadar kalır ve ilk haline döner (Varsayılan OK butonu)." },
+            { id: "lt_until", name: "Latch Until Released", desc: "Tıklandığında değişir, VI onu bir defa okuyana kadar VEYA fare butonu bırakılana kadar kalır ve döner." }
+        ];
+
+        // ----------------------------------------------------
+        // 4. 36 HIGH-YIELD FLASHCARDS DATA
+        // ----------------------------------------------------
+        const FLASHCARDS_DATA = [
+            { id: 1, unit: "Ünite 1", q: "Fiziksel büyüklüklerin sensörlerle algılanıp ADC yardımıyla sayısal verilere çevrilmesi sürecine ne denir?", a: "Dijital Ölçme (Digital Measurement). Sinyallerin örneklenip bilgisayarda saklanabilir/işlenebilir hale getirilmesine ise Veri Toplama (DAQ) denir.", tip: "Sensör algılar -> ADC sayısal bit'e çevirir -> DAQ kaydeder/işler." },
+            { id: 2, unit: "Ünite 1", q: "Sinyal Koşullandırma (Signal Conditioning) biriminin 4 temel görevi nedir?", a: "1) Filtreleme, 2) Yükseltme (Amplification), 3) İzolasyon, 4) Doğrusallaştırma (Linearization).", tip: "KODLAMA: 'FİYD' (Filtreleme, İzolasyon, Yükseltme, Doğrusallaştırma)." },
+            { id: 3, unit: "Ünite 1", q: "Veri toplama sistemlerinde güvenlik hedefi olan CIA üçlüsü nedir ve genişletilmiş modelde buna hangi 2 ilke eklenir?", a: "CIA: Gizlilik (Confidentiality), Bütünlük (Integrity), Erişilebilirlik (Availability). Eklenenler: Kimlik Doğrulama ve Hesap Verebilirlik.", tip: "CIA + Kimlik Doğrulama + Hesap Verebilirlik." },
+            { id: 4, unit: "Ünite 1", q: "Sensör ve uç IoT cihazların işlemci, bellek ve pil kaynakları sınırlı olduğu için literatürde nasıl bir şifreleme önerilir?", a: "Hafif Şifreleme Çözümleri (Lightweight Cryptography).", tip: "Düşük pil & küçük işlemci = Hafif Şifreleme." },
+            { id: 5, unit: "Ünite 1", q: "Farklı kaynaklardan toplanan anonim verilerin birleştirilmesiyle (data aggregation) kimliklerin tekrar ifşa olmasına ne ad verilir?", a: "Yeniden Tanımlama (Re-identification).", tip: "Data Aggregation (Veri Birleştirme) -> Re-identification (Yeniden Tanımlama)." },
+            { id: 6, unit: "Ünite 1", q: "Ağ içindeki hiçbir cihaz veya kullanıcıya varsayılan güven tanımayan modern güvenlik mimarisi hangisidir?", a: "Sıfır Güven (Zero Trust) Mimarisi.", tip: "Asla güvenme, her zaman doğrula = Zero Trust." },
+            { id: 7, unit: "Ünite 1", q: "Veri bütünlüğünün merkeziyetsiz biçimde doğrulanması ve değiştirilemez kayıt oluşturulması için hangi yeni nesil teknoloji kullanılır?", a: "Blok Zinciri (Blockchain) Teknolojisi.", tip: "Merkeziyetsiz + Değiştirilemez kayıt = Blok Zinciri." },
+            { id: 8, unit: "Ünite 2", q: "LabVIEW hangi şirket tarafından, hangi yılda piyasaya sürülmüştür ve kullandığı grafiksel dilin adı nedir?", a: "National Instruments (NI) tarafından 1986 yılında piyasaya sürülmüştür. Grafiksel veri akışı dilinin adı 'G' dilidir.", tip: "NI - 1986 - G Dili - .vi (Virtual Instrument)." },
+            { id: 9, unit: "Ünite 2", q: "LabVIEW'in Veri Akışı (Dataflow) programlama modelinin temel çalışma kuralı nedir?", a: "Bir işlev bloğu (düğüm) YALNIZCA tüm girdi verileri kendisine ulaştığında çalışır. Bu yapı doğal paralel işlem sağlar.", tip: "Tüm girdiler kablodan gelmeden düğüm ateşlenmez!" },
+            { id: 10, unit: "Ünite 2", q: "CVE-2025-2631 ve CVE-2025-2632 güvenlik açıkları LabVIEW'in hangi işlevinden kaynaklanır, CWE kodu ve CVSS puanı kaçtır?", a: "Veri ayrıştırma (data parsing) işlevindeki Sınır Dışı Yazma (Out-of-bounds Write - CWE-787) hatasıdır. CVSS v3.1 puanı 7,8 (Yüksek) olup uzaktan kod çalıştırmaya (RCE) yol açar.", tip: "CWE-787 -> Puan 7.8 -> Out-of-bounds write -> RCE." },
+            { id: 11, unit: "Ünite 2", q: "LabVIEW'in paralel veri akışı modelinde eşzamanlılık (concurrency) kaynaklı 3 güvenlik açığı ve CWE kodları nelerdir?", a: "1) Yarış durumu (Race condition - CWE-362), 2) Kilitlenme (Deadlock - CWE-833), 3) Paylaşılan kaynaklara uygun olmayan erişim (Improper locking - CWE-667).", tip: "362=Yarış, 833=Kilitlenme, 667=Uygunsuz Kilitleme." },
+            { id: 12, unit: "Ünite 2", q: "Front Panel ile Block Diagram pencerelerini ekranın soluna ve sağına yan yana hizalayan kısayol nedir?", a: "Ctrl + T (Yeni VI oluşturma ise Ctrl + N'dir).", tip: "T = Tile (Yan yana döşe). N = New VI." },
+            { id: 13, unit: "Ünite 2", q: "Front Panel'de seçili nesneyi katman olarak Öne / Geriye taşıyan kısayollar nelerdir?", a: "Bir katman öne: Ctrl + K | Bir katman geri: Ctrl + J | En öne: Ctrl + Shift + K | En arkaya: Ctrl + Shift + J.", tip: "K = Kalk öne, J = İniş yap geriye (Shift eklenirse EN öne/arkaya)." },
+            { id: 14, unit: "Ünite 2", q: "Blok diyagramda veri akışını yavaşlatılmış animasyonla adım adım izlemeyi sağlayan ampul simgeli düğme hangisidir?", a: "Highlight Execution. (Not: Programın gerçek hızını yavaşlatmaz, sadece yavaş izlenmesini sağlar; yavaşlatmak için zamanlayıcı gerekir).", tip: "Ampul = Highlight Execution (Hata ayıklama/izleme)." },
+            { id: 15, unit: "Ünite 2", q: "Kontrol (Control) ve Gösterge (Indicator) nesnelerinin blok diyagram ve veri akışı açısından farkı nedir?", a: "Control: Girdi (input) alır, veri akışının başlangıç/kaynak noktasıdır, kullanıcı değiştirebilir. Indicator: Çıktı (output) gösterir, bitiş/hedef noktasıdır, kullanıcı değiştiremez.", tip: "Control = Kaynak (Ok sağda), Indicator = Hedef (Ok solda)." },
+            { id: 16, unit: "Ünite 3", q: "LabVIEW'de Turuncu, Mavi, Yeşil ve Pembe kablolar hangi veri tiplerini temsil eder?", a: "Turuncu: Ondalıklı Sayı (Float/DBL) | Mavi: Tam Sayı (Integer) | Yeşil: Boolean (True/False) | Pembe: String (Metin).", tip: "Turuncu=Virgüllü, Mavi=Tam, Yeşil=TF, Pembe=abc." },
+            { id: 17, unit: "Ünite 3", q: "Array (Dizi) ile Cluster (Küme) arasındaki en temel fark nedir?", a: "Array: AYNI veri tipinden birden çok elemanı tutar. Cluster: FARKLI veri tiplerini tek bir yapıda bir araya getirir (C dilindeki struct gibi).", tip: "Aynı tip = Array | Farklı tipler (Struct) = Cluster (Kahverengi/Pembe)." },
+            { id: 18, unit: "Ünite 3", q: "Buton mekaniklerinde 'Lamba anahtarı' gibi çalışan ile 'Kapı zili' gibi çalışan modlar hangileridir?", a: "Lamba anahtarı: Switch When Pressed (Basınca kalıcı değişir). Kapı zili: Switch Until Released (Basılı tutarken değişir, bırakınca döner).", tip: "Until Released = Bırakana kadar (Kapı zili)." },
+            { id: 19, unit: "Ünite 3", q: "Buton mekaniklerinde 'Latch' (Mandal) modlarının 'Switch' modlarından farkı nedir?", a: "Latch modlarında buton değeri değiştikten sonra LabVIEW VI'ı o kontrolü BİR DEFA OKUDUĞUNDA buton otomatik olarak ilk haline geri döner.", tip: "Latch = VI 1 kez okuyunca otomatik sıfırlanır!" },
+            { id: 20, unit: "Ünite 3", q: "Blok diyagramda Kırık Run okuna sebep olan 5 yanlış kablo bağlantısı nedir?", a: "1) Kontrolü kontrole bağlamak, 2) Farklı veri tiplerini bağlamak, 3) Hattın kaynağının olmaması, 4) Bir hatta birden fazla kaynak bağlamak, 5) Hattın kendine geri gelmesi.", tip: "İki kaynak çarpışamaz, iki kontrol birbirine bağlanamaz!" },
+            { id: 21, unit: "Ünite 3", q: "Termometre örneğinde Celcius (C) değerinden Kelvin, Reomür ve Fahrenheit nasıl hesaplanır?", a: "Kelvin: K = C + 273 | Reomür: R = C * 0,8 | Fahrenheit: F = C * 1,8 + 32. (50°C için K=323, R=40, F=122).", tip: "K=+273, R=*0.8, F=*1.8+32." },
+            { id: 22, unit: "Ünite 4", q: "For Loop'ta N terminali 10'a bağlanırsa ve i terminali bir göstergeye bağlanırsa program bittiğinde ekranda kaç yazar?", a: "9 yazar! Çünkü i (iteration) terminali 0'dan saymaya başlar (0, 1, 2, ..., 9 -> toplam 10 adım).", tip: "Son i değeri her zaman N - 1'dir!" },
+            { id: 23, unit: "Ünite 4", q: "Dış döngüsü M=5, iç döngüsü N=4 olan iç içe iki For Loop toplam kaç kez çalışır ve bittiğinde dış/iç i göstergeleri kaçı gösterir?", a: "Toplam 5 x 4 = 20 kez çalışır. Bittiğinde Dış Döngü i göstergesi 4'ü (5-1), İç Döngü i göstergesi 3'ü (4-1) gösterir.", tip: "Toplam tur = M x N. Son indeksler = M-1 ve N-1." },
+            { id: 24, unit: "Ünite 4", q: "Timing paletindeki Wait (ms) ile Time Delay fonksiyonları arasındaki birim farkı nedir?", a: "Wait (ms) milisaniye cinsinden bekler (1000 ms = 1 sn). Time Delay ise saniye cinsinden bekler.", tip: "Wait (ms) = Milisaniye | Time Delay = Saniye." },
+            { id: 25, unit: "Ünite 4", q: "Virgülden sonra 14 basamak hassasiyetle zaman ölçen fonksiyon hangisidir? Hangi zaman fonksiyonu gerçek tarihe dönüştürülemez?", a: "14 basamak hassasiyet: High Resolution Relative Seconds.vi. Gerçek tarih/saate dönüştürülemeyen: Tick Count (ms).", tip: "14 basamak = High Resolution. Tarihe çevrilemeyen = Tick Count." },
+            { id: 26, unit: "Ünite 4", q: "While Loop neden başlangıç koşulu ne olursa olsun EN AZ BİR KEZ çalışır?", a: "Çünkü koşul kontrolü (Conditional Terminal) döngü gövdesi çalıştıktan SONRA yapılır (Do-While mantığı).", tip: "Önce çalışır, sonra koşula bakar = En az 1 tur garanti!" },
+            { id: 27, unit: "Ünite 4", q: "While/For Loop'ta Stop butonu döngünün DIŞINA konulup tünelle içeri bağlanırsa ne olur?", a: "Döngü dışındaki kontrol sadece döngü başlamadan önce 1 kez okunur. Döngü çalışırken kullanıcı Stop'a bassa bile değişiklik içeri yansımaz ve döngü durmaz!", tip: "Stop butonu mutlaka döngünün İÇİNDE olmalıdır!" },
+            { id: 28, unit: "Ünite 5", q: "Case Structure'da hangi veri tipleri seçici (selector) olarak kullanıldığında 'Default' case bulunması ZORUNLUDUR?", a: "Integer (Tam sayı), String (Metin) ve Enum kullanıldığında Default case zorunludur. (Boolean'da sadece True/False olduğu için gerekmez).", tip: "Çok seçenekli tiplerde (Int, String, Enum) Default şarttır!" },
+            { id: 29, unit: "Ünite 5", q: "Case Structure'da bir çıkış tüneli tüm case'lerde bağlanmazsa ne olur? 'Use Default If Unwired' seçilirse Nümerik, Boolean ve String'den ne çıkar?", a: "Tünel beyaz kalır ve VI çalışmaz (Kırık Run). Use Default If Unwired seçilirse: Nümerik = 0, Boolean = False, String = Boş (\"\") çıkar.", tip: "Varsayılanlar: Sayı=0, Bool=False, String=\"\"." },
+            { id: 30, unit: "Ünite 6", q: "Local Variable (Yerel Değişken) nedir, normal terminallerden farkı ve en büyük riski nedir?", a: "Aynı VI'daki kontrol/göstergeye kablosuz erişim sağlar. Kontrole yazma (Write), göstergeden okuma (Read) imkânı verir. En büyük riski paralel yazmada Yarış Durumu (Race Condition) oluşturmasıdır.", tip: "Güvenli alternatifleri: Shift Register, Queue, Notifier, FGV." },
+            { id: 31, unit: "Ünite 6", q: "Flat Sequence ile Stacked Sequence arasındaki fark nedir?", a: "Flat Sequence'te tüm kareler (frames) yan yana aynı anda görünür (okunabilirliği yüksektir). Stacked Sequence'te kareler üst üstedir, tek kare görünür ve veri aktarımında Sequence Local gerekir.", tip: "Soldan sağa kesin sıra dayatmak için Flat Sequence kullanılır." },
+            { id: 32, unit: "Ünite 6", q: "Comparison paletindeki Select Node (s? t:f) nasıl çalışır?", a: "Ortadaki boolean (s) girişine True gelirse üstteki (t) girişini, False gelirse alttaki (f) girişini çıkışa aktarır.", tip: "Mini if-else bloğu: True -> Üst (t), False -> Alt (f)." },
+            { id: 33, unit: "Ünite 7", q: "Expression Node ile Formula Node hangi paletlerde yer alır ve giriş/çıkış farkları nedir?", a: "Expression Node: Numeric paletindedir, TEK giriş (x) ve TEK çıkışlıdır. Formula Node: Structures paletindedir, ÇOKLU giriş ve ÇOKLU çıkışlıdır, her satırı noktalı virgül (;) ile biter.", tip: "Expression = Tekli (Numeric) | Formula = Çoklu + Noktalı virgül (Structures)." },
+            { id: 34, unit: "Ünite 7", q: "Hangi matematiksel fonksiyonlar ve yapılar Expression Node'da YOKTUR, yalnızca Formula Node'da kullanılır?", a: "min(x,y), max(x,y), mod(x,y), rand() fonksiyonları ile if-else, for, while ve (? :) kontrol yapıları YALNIZCA Formula Node'da kullanılır.", tip: "İki parametre alanlar (min, max, mod) ve döngü/if yapıları sadece Formula Node'da!" },
+            { id: 35, unit: "Ünite 7", q: "Formula Node içindeki `x = (a <= 7) ? sqrt(a) : -1;` ifadesinde a=7 ve a=10 için çıkış (x) ne olur?", a: "a=7 için koşul doğru olduğundan √7 = 2,64575 çıkar. a=10 için koşul yanlış olduğundan -1 çıkar.", tip: "Ternary operatörü: Koşul ? Doğruysa : Yanlışsa;" },
+            { id: 36, unit: "Ünite 7", q: "Numeric paletindeki `[]` ve `||` sembollü üçgen bloklar ne işe yarar?", a: "`[]` (Round To Nearest): Sayıyı en yakın tam sayıya yuvarlar. `||` (Absolute Value): Sayının mutlak değerini alır.", tip: "y = x^2 - x + |1-x| örneğinde önce [] ile yuvarlama yapılmıştır." }
+        ];
+
+        // ----------------------------------------------------
+        // 5. 30 EXAM SIMULATOR QUESTIONS (QUIZ)
+        // ----------------------------------------------------
+        const QUIZ_QUESTIONS = [
+            {
+                id: 1, cat: "cyber",
+                q: "1. Sensörlerden elde edilen analog sinyallerin örneklenmesi, dönüştürülmesi ve bir bilgisayar ya da gömülü sistem ortamında saklanabilir/işlenebilir hale getirilmesi işlemine ne ad verilir?",
+                options: ["Sinyal Koşullandırma (Signal Conditioning)", "Veri Toplama (Data Acquisition - DAQ)", "Dijital-Analog Dönüşüm (DAC)", "Yeniden Tanımlama (Re-identification)"],
+                ans: 1,
+                exp: "PDF 1 - Sayfa 3: Veri toplama (Data Acquisition - DAQ), sensörlerden elde edilen analog sinyallerin örneklenmesi, dönüştürülmesi ve bilgisayar/gömülü sistemde saklanabilir/işlenebilir hale getirilmesi işlemidir."
+            },
+            {
+                id: 2, cat: "cyber",
+                q: "2. Bilgisayar tabanlı bir DAQ sisteminde 'filtreleme, yükseltme (amplification), izolasyon ve doğrusallaştırma' işlemlerini yapan blok hangisidir?",
+                options: ["Algılayıcı / Sensör", "Analog-Dijital Çevirici (ADC)", "Sinyal Koşullandırma (Signal Conditioning)", "Çıkış / Kontrol Birimi (DAC)"],
+                ans: 2,
+                exp: "PDF 1 - Sayfa 7: Sinyal Koşullandırma (Signal Conditioning) bloğu filtreleme, yükseltme, izolasyon ve doğrusallaştırma işlemlerini yapar."
+            },
+            {
+                id: 3, cat: "cyber",
+                q: "3. Sensör ve uç IoT cihazların işlemci gücü, bellek ve enerji (pil) kaynaklarının sınırlı olması nedeniyle güçlü şifreleme algoritmalarının doğrudan uygulanamaması sorununa karşı literatürde ne önerilmektedir?",
+                options: ["Şifrelemenin tamamen devre dışı bırakılması", "Hafif şifreleme (Lightweight cryptography) çözümleri", "Yalnızca fiziksel güvenlik uygulanması", "Verilerin açık metin (cleartext) olarak HTTP ile gönderilmesi"],
+                ans: 1,
+                exp: "PDF 1 - Sayfa 12-13: Küçük cihazlar ağır şifrelemeyi kaldıramadığı için literatürde hafif şifreleme çözümleri önerilmektedir."
+            },
+            {
+                id: 4, cat: "cyber",
+                q: "4. Farklı kaynaklardan toplanan büyük hacimli sensör ve davranışsal verilerin birleştirilmesi (data aggregation) sonucunda, anonimleştirilmiş verilerden dahi bireylerin kimliklerinin açığa çıkması riskine ne denir?",
+                options: ["Veri Zehirlenmesi (Data Poisoning)", "Yan Kanal Saldırısı (Side-Channel Attack)", "Yeniden Tanımlama (Re-identification)", "Veri Minimizasyonu (Data Minimization)"],
+                ans: 2,
+                exp: "PDF 1 - Sayfa 15: Farklı kaynaklardan toplanan verilerin birleştirilmesi (data aggregation), anonim verilerden dahi bireylerin yeniden tanımlanabilmesine (re-identification) yol açabilmektedir."
+            },
+            {
+                id: 5, cat: "cyber",
+                q: "5. Ağ içindeki hiçbir cihaz veya kullanıcıya varsayılan güven tanımayan mimari yaklaşım ile veri bütünlüğünün merkeziyetsiz/değiştirilemez biçimde doğrulanmasını sağlayan teknoloji aşağıdakilerden hangisinde doğru eşleştirilmiştir?",
+                options: ["Sıfır Güven (Zero Trust) — Blok Zinciri (Blockchain)", "PKI Sertifikası — VLAN Segmentasyonu", "SIEM — Modbus Protokolü", "Tasarımdan Mahremiyet — Stuxnet"],
+                ans: 0,
+                exp: "PDF 1 - Sayfa 16-17: Varsayılan güven tanımayan mimari Sıfır Güven (Zero Trust); merkeziyetsiz ve değiştirilemez kayıt oluşturan teknoloji ise Blok Zinciri (Blockchain) teknolojisidir."
+            },
+            {
+                id: 6, cat: "cyber",
+                q: "6. CISA tarafından yayımlanan bildirimlere göre, LabVIEW'in veri ayrıştırma (data parsing) işlevindeki CVE-2025-2631 ve CVE-2025-2632 güvenlik açıklarının hata türü (CWE), CVSS v3.1 puanı ve etkisi nedir?",
+                options: [
+                    "Yarış Durumu (CWE-362) — Puan: 5.4 — Hizmet Dışı Bırakma",
+                    "Sınır Dışı Yazma / Out-of-bounds Write (CWE-787) — Puan: 7,8 (Yüksek) — Uzaktan Kod Çalıştırma",
+                    "Kilitlenme / Deadlock (CWE-833) — Puan: 9.8 — Veri Sızıntısı",
+                    "SQL Enjeksiyonu (CWE-89) — Puan: 6.5 — Yetki Yükseltme"
+                ],
+                ans: 1,
+                exp: "PDF 2 - Sayfa 11: CVE-2025-2631 ve CVE-2025-2632, veri ayrıştırma işlevindeki sınır dışı yazma (out-of-bounds write, CWE-787) hatalarından kaynaklanır ve CVSS 7,8 puanı ile uzaktan kod çalıştırmaya yol açar."
+            },
+            {
+                id: 7, cat: "cyber",
+                q: "7. LabVIEW'in paralel veri akışı programlama modeli geliştiricilere kolaylık sağlarken, eşzamanlılık (concurrency) kaynaklı hangi güvenlik açıklarına zemin hazırlayabilmektedir?",
+                options: [
+                    "Yarış durumu (CWE-362), Kilitlenme (CWE-833) ve Paylaşılan kaynaklara uygun olmayan erişim (CWE-667)",
+                    "DDoS, Ortadaki Adam (MITM) ve Phishing",
+                    "Sınır dışı yazma (CWE-787) ve XSS",
+                    "Stuxnet ve Modbus taşması"
+                ],
+                ans: 0,
+                exp: "PDF 2 - Sayfa 12: Paralel veri akışı modeli; Yarış durumu (race condition – CWE-362), Kilitlenme (deadlock – CWE-833) ve Paylaşılan kaynaklara uygun olmayan erişim (improper locking – CWE-667) açıklarına zemin hazırlayabilir."
+            },
+            {
+                id: 8, cat: "cyber",
+                q: "8. LabVIEW uygulama güvenliği alanında JKI Security Suite gibi araçların kategorilendirdiği başlıca risk türleri arasında aşağıdakilerden hangisi yer alır?",
+                options: [
+                    "Girdi doğrulama eksikliği, koda gömülü kimlik bilgileri ve açık metin olarak saklanan hassas veriler",
+                    "Sensörlerin aşırı ısınması ve ADC bit çözünürlüğünün düşmesi",
+                    "Front Panel'de Silver yerine Classic kontrollerin kullanılması",
+                    "For Loop yerine While Loop tercih edilmesi"
+                ],
+                ans: 0,
+                exp: "PDF 2 - Sayfa 12: JKI Security Suite'in kategorilendirdiği başlıca riskler: girdi doğrulama eksikliği, koda gömülü kimlik bilgileri ve açık metin olarak saklanan hassas verilerdir."
+            },
+            {
+                id: 9, cat: "cyber",
+                q: "9. Kritik altyapılarda kullanılan SCADA/DAQ sistemlerine yönelik siber saldırıların enerji, su ve ulaşım gibi hayati sistemlerde yıkıcı sonuçlar doğurabildiğini gösteren tarihsel örnekler hangileridir?",
+                options: ["Modbus protokolü zafiyetleri ve Stuxnet vakası", "NI-DAQmx ve CompactRIO vakası", "KVKK ve GDPR vakası", "TLS ve AES algoritmaları"],
+                ans: 0,
+                exp: "PDF 1 - Sayfa 14: Modbus protokolü zafiyetleri ve Stuxnet vakası endüstriyel kontrol sistemlerini hedef alan tarihsel örneklerdir."
+            },
+            {
+                id: 10, cat: "cyber",
+                q: "10. Türkiye'de KVKK ve Avrupa Birliği'nde GDPR gibi mevzuatlar veri toplama süreçlerinde hangi ilkeleri zorunlu kılar?",
+                options: [
+                    "Açık rıza, veri minimizasyonu, amaçla sınırlılık ve hesap verebilirlik",
+                    "Verilerin süresiz saklanması ve tüm kaynaklarla birleştirilmesi",
+                    "Yalnızca analog ölçüm cihazlarının kullanılması",
+                    "Anonim verilerin açık metin olarak paylaşılması"
+                ],
+                ans: 0,
+                exp: "PDF 1 - Sayfa 15: KVKK ve GDPR; açık rıza, veri minimizasyonu, amaçla sınırlılık ve hesap verebilirlik ilkelerini zorunlu kılar."
+            },
+            {
+                id: 11, cat: "labview",
+                q: "11. LabVIEW ve çalışma mantığı hakkında aşağıdakilerden hangisi YANLIŞTIR?",
+                options: [
+                    "National Instruments (NI) tarafından 1986 yılında piyasaya sürülmüştür ve 'G' grafiksel programlama diline dayanır.",
+                    "Bir LabVIEW programı Sanal Enstrüman (VI) olarak adlandırılır; Ön Panel ve Blok Diyagram olmak üzere iki temel bileşenden oluşur.",
+                    "Veri akışı (dataflow) modeline göre bir işlev bloğu, girdi verilerinden herhangi biri ulaştığı anda hemen çalışır.",
+                    "Ctrl + T kısayolu ile Front Panel ve Block Diagram yan yana hizalanabilir."
+                ],
+                ans: 2,
+                exp: "PDF 2 - Sayfa 4: Veri akışı paradigmasına göre bir işlev bloğu YALNIZCA TÜM girdi verileri kendisine ulaştığında çalışır (herhangi biri ulaştığında değil!)."
+            },
+            {
+                id: 12, cat: "labview",
+                q: "12. LabVIEW Front Panel araç çubuğunda seçili nesneyi 'bir katman öne' ve 'en arkaya' almak için kullanılan klavye kısayolları hangisinde doğru verilmiştir?",
+                options: [
+                    "Bir katman öne: Ctrl + K — En arkaya: Ctrl + Shift + J",
+                    "Bir katman öne: Ctrl + T — En arkaya: Ctrl + N",
+                    "Bir katman öne: Ctrl + J — En arkaya: Ctrl + Shift + K",
+                    "Bir katman öne: Ctrl + Z — En arkaya: Ctrl + Y"
+                ],
+                ans: 0,
+                exp: "PDF 2 - Sayfa 33: Move Forward (Bir katman öne): Ctrl+K, Move Backward (Bir katman geri): Ctrl+J, Move To Front (En öne): Ctrl+Shift+K, Move To Back (En arkaya): Ctrl+Shift+J."
+            },
+            {
+                id: 13, cat: "labview",
+                q: "13. Kontrol (Control), Gösterge (Indicator) ve Sabit (Constant) nesneleriyle ilgili aşağıdakilerden hangisi DOĞRUDUR?",
+                options: [
+                    "Gösterge (Indicator) nesnelerinin değerini kullanıcı program çalışırken doğrudan ön panelden değiştirebilir.",
+                    "Kontrol (Control) nesneleri veri akışının başlangıç (kaynak) noktalarını, Göstergeler ise bitiş/sonuç (hedef) noktalarını temsil eder.",
+                    "Bir nesne oluşturulduktan sonra sağ tıklanarak kontrolden göstergeye dönüştürülemez.",
+                    "Constant (Sabit) nesneleri hem Ön Panelde hem de Blok Diyagramda görünür."
+                ],
+                ans: 1,
+                exp: "PDF 2 - Sayfa 20-23: Kontroller girdi (kaynak), göstergeler çıktı (hedef) noktalarıdır. Göstergeleri kullanıcı doğrudan değiştiremez. Sağ tık 'Change to Indicator/Control/Constant' ile birbirlerine dönüştürülebilirler."
+            },
+            {
+                id: 14, cat: "labview",
+                q: "14. LabVIEW Blok Diyagramında kablo renkleri ve veri tipleri eşleştirmelerinden hangisi YANLIŞTIR?",
+                options: [
+                    "Turuncu: Ondalıklı sayısal (Float / DBL) — Mavi: Tam sayı (Integer)",
+                    "Yeşil: Boolean (True/False) — Pembe: String (Metin)",
+                    "Mavi-yeşil (Turkuaz): Enum — Koyu Mavi: Dinamik Veri Tipi (Express VI)",
+                    "Kırmızı: Boolean — Mor: Tam Sayı (Integer)"
+                ],
+                ans: 3,
+                exp: "PDF 3 - Sayfa 10-12: Kırmızı kablo Class (Sınıf), Mor kablo ise Variant veya Donanımsal Kaynak tipini gösterir. Boolean yeşildir, Integer mavidir."
+            },
+            {
+                id: 15, cat: "labview",
+                q: "15. Farklı veri tiplerini (örneğin bir sayı, bir boolean ve bir string'i) C dilindeki 'struct' yapısına benzer şekilde tek bir yapıda bir araya getiren ve Bundle/Unbundle fonksiyonlarıyla işlenen LabVIEW veri tipi hangisidir?",
+                options: ["Array (Dizi)", "Cluster (Küme)", "Enum", "Scalar"],
+                ans: 1,
+                exp: "PDF 3 - Sayfa 11 & 15: Cluster (Küme), farklı veri tiplerini tek bir yapıda bir araya getirir (C'deki struct benzeri). Array ise yalnızca AYNI veri tipinden elemanları tutar."
+            },
+            {
+                id: 16, cat: "labview",
+                q: "16. Butonların çalışma biçimi (Mechanical Action) ayarlarında; 'kontrole tıklandığında değeri değişen ve fare butonu bırakılana kadar o şekilde kalıp bırakılınca eski haline dönen (kapı zili gibi çalışan)' mod hangisidir?",
+                options: ["Switch When Pressed", "Switch Until Released", "Latch When Released", "Switch When Released"],
+                ans: 1,
+                exp: "PDF 3 - Sayfa 7: 'Switch Until Released - Kontrolün değeri kontrole tıklandığında değişir ve fare butonu bırakılana kadar o şekilde kalmaya devam eder. Kapı zili gibi...'"
+            },
+            {
+                id: 17, cat: "labview",
+                q: "17. 'Kontrolün değeri fare butonu bırakıldığında değişir, VI onu bir defa okuyana kadar o şekilde kalır ve kontrol ilk haline geri döner' açıklaması hangi buton davranışına aittir?",
+                options: ["Latch When Released", "Switch When Released", "Latch When Pressed", "Switch Until Released"],
+                ans: 0,
+                exp: "PDF 3 - Sayfa 7-8: Fare bırakıldığında değişip LabVIEW VI tarafından bir kez okunduğunda ilk haline dönen mod 'Latch When Released' modudur."
+            },
+            {
+                id: 18, cat: "labview",
+                q: "18. Aşağıdakilerden hangisi Blok Diyagramda yanlış kablo bağlantısı (Kırık Run oku) sebeplerinden biri DEĞİLDİR?",
+                options: [
+                    "Bir kontrolü (Control) başka bir kontrole bağlamak",
+                    "Bir kontrolden çıkan kabloyu aynı veri tipindeki iki farklı göstergeye (Indicator) bağlamak",
+                    "Bir hatta birden fazla kaynak bağlamak veya hattın kaynağının olmaması",
+                    "Farklı tip değişkenleri birbirine bağlamak veya hattın kendine geri gelmesi"
+                ],
+                ans: 1,
+                exp: "PDF 3 - Sayfa 13 & PDF 2 - Sayfa 21: Tek bir kaynaktan (Control) çıkan kablo dallanarak birden fazla göstergeye (ör. hem Meter hem Sayı Değer göstergesine) bağlanabilir, bu tamamen doğrudur."
+            },
+            {
+                id: 19, cat: "labview",
+                q: "19. Termometre örneğinde (PDF 3 S.20) Celcius girişine 50 değeri girildiğinde; Kelvin (K=C+273), Reomür (R=C*0,8) ve Fahrenheit (F=C*1,8+32) göstergelerinde sırasıyla hangi değerler okunur?",
+                options: [
+                    "Kelvin: 323 — Reomür: 40 — Fahrenheit: 122",
+                    "Kelvin: 273 — Reomür: 50 — Fahrenheit: 90",
+                    "Kelvin: 373 — Reomür: 80 — Fahrenheit: 212",
+                    "Kelvin: 323 — Reomür: 62,5 — Fahrenheit: 100"
+                ],
+                ans: 0,
+                exp: "PDF 3 - Sayfa 20: C=50 için K = 50 + 273 = 323; R = 50 * 0,8 = 40; F = 50 * 1,8 + 32 = 90 + 32 = 122."
+            },
+            {
+                id: 20, cat: "labview",
+                q: "20. Bir For Loop'un N (count) terminaline 10 sabiti bağlanmış ve i (iteration) terminali doğrudan bir Numeric Indicator'e bağlanmıştır. Program çalıştırıldığında göstergede hangi son değer görülür ve neden?",
+                options: [
+                    "10 görülür, çünkü N terminaline 10 bağlanmıştır.",
+                    "9 görülür, çünkü i sayacı 0'dan başlar ve 0 dahil 10 adım atarak 9'da biter.",
+                    "0 görülür, çünkü döngü içinde zamanlayıcı yoktur.",
+                    "11 görülür, çünkü i her zaman N+1'e kadar gider."
+                ],
+                ans: 1,
+                exp: "PDF 4 - Sayfa 5: i değeri varsayılan olarak 0'dan başlar. 0 dahil 10 adım attığı (0,1,2,3,4,5,6,7,8,9) ve çok hızlı çalıştığı için ön panelde sadece son değer olan 9'u görürüz."
+            },
+            {
+                id: 21, cat: "labview",
+                q: "21. İç içe (Nested) iki For Loop yapısında dış döngünün N terminaline 5, iç döngünün N terminaline 4 bağlanmıştır. Program çalışıp bittiğinde toplam kaç iterasyon gerçekleşir ve Dış Döngü ile İç Döngü 'i' göstergelerinde son olarak hangi sayılar yazar?",
+                options: [
+                    "Toplam 20 iterasyon — Dış Döngü: 4, İç Döngü: 3",
+                    "Toplam 9 iterasyon — Dış Döngü: 5, İç Döngü: 4",
+                    "Toplam 20 iterasyon — Dış Döngü: 5, İç Döngü: 4",
+                    "Toplam 12 iterasyon — Dış Döngü: 3, İç Döngü: 4"
+                ],
+                ans: 0,
+                exp: "PDF 4 - Sayfa 11-13: Toplam iterasyon M x N = 5 x 4 = 20'dir. Dış döngü 0'dan 4'e kadar (son değer 4), iç döngü 0'dan 3'e kadar (son değer 3) sayar."
+            },
+            {
+                id: 22, cat: "labview",
+                q: "22. Döngülerde zamanlama ve izleme ile ilgili aşağıdakilerden hangisi DOĞRUDUR?",
+                options: [
+                    "Highlight Execution (ampul) düğmesi çalışan programı gerçek anlamda yavaşlatmak için kullanılan bir zamanlayıcıdır.",
+                    "Wait (ms) fonksiyonunun birimi milisaniyedir; Time Delay fonksiyonu ise saniye kadar bekleme sağlar.",
+                    "Tick Count (ms) fonksiyonu doğrudan gerçek tarih ve saat bilgisine dönüştürülebilir.",
+                    "High Resolution Relative Seconds.vi en fazla virgülden sonra 2 basamak hassasiyet sunar."
+                ],
+                ans: 1,
+                exp: "PDF 4 - Sayfa 6-8: Highlight Execution programı yavaşlatmaz, sadece yavaş izlenmesini sağlar. Wait (ms) milisaniye, Time Delay saniye bekler. Tick Count gerçek tarihe çevrilemez. High Resolution 14 basamak hassasiyetlidir."
+            },
+            {
+                id: 23, cat: "labview",
+                q: "23. Bir döngüde 'Stop' boolean kontrolünün döngünün İÇİNDE olması (A) ile döngünün DIŞINDA olup tünelle içeri bağlanması (B) arasındaki fark nedir?",
+                options: [
+                    "Hiçbir fark yoktur, her iki durumda da butona basıldığı an döngü durur.",
+                    "A'da kontrol her iterasyonda okunur ve basıldığı an durur; B'de ise dışarıdaki kontrol döngü başlamadan önce sadece 1 kez okunur, döngü çalışırken basılsa bile döngüye hiç yansımaz.",
+                    "B durumunda program Kırık Run hatası verir ve hiç çalışmaz.",
+                    "A durumunda döngü sadece 1 kez çalışır."
+                ],
+                ans: 1,
+                exp: "PDF 4 - Sayfa 18: Döngü dışındaki bir kontrolün değeri döngü başlamadan önce bir kez okunur ve tüm iterasyonlar boyunca sabit kalır; çalışırken değiştirilse bile döngüye yansımaz."
+            },
+            {
+                id: 24, cat: "labview",
+                q: "24. While Loop ile For Loop karşılaştırıldığında aşağıdakilerden hangisi While Loop'un ayırt edici özelliğidir?",
+                options: [
+                    "Belirli bir N sayısına göre sabit sayıda çalışması",
+                    "Koşul kontrolü döngü gövdesi çalıştıktan sonra yapıldığı için başlangıç koşulundan bağımsız olarak EN AZ BİR KEZ çalışması",
+                    "İçinde iterasyon sayacı (i) bulunmaması",
+                    "Sadece Boolean verilerle işlem yapabilmesi"
+                ],
+                ans: 1,
+                exp: "PDF 4 - Sayfa 16: Koşul kontrolü döngü gövdesi çalıştıktan sonra yapıldığından, While Loop içeriği başlangıç koşulundan bağımsız olarak en az bir kez çalışır."
+            },
+            {
+                id: 25, cat: "labview",
+                q: "25. Case Structure yapısında çıkış tünelinde 'Use Default If Unwired' seçeneği aktif edildiğinde; kablo bağlanmamış case'ler için Nümerik, Boolean ve String veri tiplerinin üreteceği varsayılan değerler sırasıyla nedir?",
+                options: [
+                    "Nümerik: 0 — Boolean: False — String: Boş (\"\")",
+                    "Nümerik: 1 — Boolean: True — String: \"Default\"",
+                    "Nümerik: -1 — Boolean: False — String: \"0\"",
+                    "Nümerik: NaN — Boolean: True — String: Boş (\"\")"
+                ],
+                ans: 0,
+                exp: "PDF 5 - Sayfa 10 Tablosu: Değişken tipine göre varsayılan değerler: Nümerik = 0, Boolean = False, String = Boş (\"\")."
+            },
+            {
+                id: 26, cat: "labview",
+                q: "26. Case Structure ile ilgili aşağıdaki ifadelerden hangisi YANLIŞTIR?",
+                options: [
+                    "Integer, String veya Enum seçici kullanıldığında 'Default' case bulunması zorunludur.",
+                    "Bir nesne birden fazla seçenekte (hem True hem False'ta) kullanılacaksa, nesne Case Structure'ın dışına konulup tünel ile bağlanmalıdır.",
+                    "Üst etikette '2..4, 6' yazan bir case; seçiciye 2, 3, 4, 5 ve 6 değerleri geldiğinde çalışır.",
+                    "Aynı anda yalnızca seçilen case'in içindeki blok diyagram yürütülür, diğerleri atlanır."
+                ],
+                ans: 2,
+                exp: "PDF 5 - Sayfa 5: '2..4, 6' ifadesi 2'den 4'e kadar olan sayıları (2, 3, 4) ve 6'yı kapsar; 5 değerini KAPSAMAZ!"
+            },
+            {
+                id: 27, cat: "labview",
+                q: "27. Local Variable (Yerel Değişken) ile ilgili aşağıdakilerden hangisi DOĞRUDUR?",
+                options: [
+                    "Farklı bilgisayarlar arasında internet üzerinden veri göndermek için kullanılır.",
+                    "Normalde yalnızca okunabilen bir kontrolün (Control) değerine programatik olarak yazma (Write) ve yalnızca yazılabilen bir göstergeden (Indicator) okuma (Read) imkânı sağlar.",
+                    "Paralel döngülerde aynı değişkene aynı anda yazıldığında hiçbir güvenlik veya yarış durumu (race condition) riski oluşturmaz.",
+                    "Yalnızca Numeric veri tipiyle çalışabilir, Boolean ile çalışamaz."
+                ],
+                ans: 1,
+                exp: "PDF 6 - Sayfa 3-4: Local Variable, kontrolün hem okunup hem yazılabilmesini (Read/Write Local) sağlar. Ancak paralel yerlerden aynı anda yazılırsa yarış durumu (race condition) oluşabilir."
+            },
+            {
+                id: 28, cat: "labview",
+                q: "28. Veri akışı modelinde birbirine bağımlı olmayan işlemlerin 'önce şunu yap, sonra bunu yap' şeklinde kesin bir sırayla soldan sağa doğru art arda çalışmasını sağlayan ve tüm kareleri (frames) aynı anda yan yana görünür olan yapı hangisidir?",
+                options: ["Flat Sequence Structure", "Stacked Sequence Structure", "Case Structure", "Formula Node"],
+                ans: 0,
+                exp: "PDF 6 - Sayfa 9-10: Flat Sequence Structure, kareleri soldan sağa kesin sırayla çalıştırır ve Stacked Sequence'in aksine tüm kareler aynı anda yan yana görünür."
+            },
+            {
+                id: 29, cat: "labview",
+                q: "29. Expression Node ile Formula Node arasındaki farklar hakkında aşağıdakilerden hangisi DOĞRUDUR?",
+                options: [
+                    "Expression Node çok girişli ve çok satırlıdır; Formula Node ise sadece tek girişlidir.",
+                    "Expression Node 'Numeric' paletinde yer alır ve tek değişkenli/tek satırlıdır; Formula Node 'Structures' paletinde yer alır, çoklu giriş/çıkış destekler ve her satırı noktalı virgül (;) ile bitmelidir.",
+                    "if-else, for, while kontrol yapıları ve min(x,y), max(x,y) fonksiyonları yalnızca Expression Node içinde kullanılabilir.",
+                    "Formula Node içinde sin(x), cos(x) ve sqrt(x) gibi matematiksel fonksiyonlar kullanılamaz."
+                ],
+                ans: 1,
+                exp: "PDF 7 - Sayfa 5-11: Expression Node Numeric paletindedir, tek giriş/tek çıkışlıdır. Formula Node Structures paletindedir, çoklu giriş/çıkışlıdır, her satır (;) ile biter ve if-else/for/while ile min/max/mod/rand yalnızca Formula Node'da bulunur."
+            },
+            {
+                id: 30, cat: "labview",
+                q: "30. Bir Formula Node içerisine `x=(a<=7)?sqrt(a):-1;` kodu yazılmıştır (PDF 7 S.14). Giriş terminaline (a) sırasıyla 7 ve 10 değerleri verildiğinde çıkış terminalinde (x) hangi değerler görünür?",
+                options: [
+                    "a=7 için: 49 — a=10 için: -1",
+                    "a=7 için: 2,64575 — a=10 için: -1",
+                    "a=7 için: -1 — a=10 için: 3,1622",
+                    "a=7 için: 7 — a=10 için: 100"
+                ],
+                ans: 1,
+                exp: "PDF 7 - Sayfa 14: Kodda `sqrt(a)` (karekök) fonksiyonu kullanılmıştır. a=7 için 7<=7 doğru olduğundan √7 = 2,64575 çıkar. a=10 için koşul yanlış olduğundan -1 çıkar."
+            }
+        ];
+
+        // ----------------------------------------------------
+        // STATE MANAGEMENT (SAVED IN LOCALSTORAGE)
+        // ----------------------------------------------------
+        let learnedCards = JSON.parse(localStorage.getItem('subu_daq_learned_cards') || '[]');
+        let readModules = JSON.parse(localStorage.getItem('subu_daq_read_modules') || '[]');
+        let quizAnswers = JSON.parse(localStorage.getItem('subu_daq_quiz_answers') || '{}');
+
+        let currentModFilter = 'all';
+        let currentFcList = [...FLASHCARDS_DATA];
+        let currentFcIndex = 0;
+        let isFcFlipped = false;
+        let currentQuizMode = 'all';
+
+        // Simulator States
+        let selectedMechMode = 'sw_pressed';
+        let simBoolState = false;
+
+        // ----------------------------------------------------
+        // INITIALIZATION
+        // ----------------------------------------------------
+        window.onload = function() {
+            renderModules();
+            initSimulators();
+            renderFlashcard();
+            renderQuiz();
+            updateOverallProgress();
+
+            // Spacebar to flip card when in flashcards tab
+            window.addEventListener('keydown', (e) => {
+                if (!document.getElementById('view-flashcards').classList.contains('hidden')) {
+                    if (e.code === 'Space') {
+                        e.preventDefault();
+                        flipCurrentCard();
+                    } else if (e.code === 'ArrowRight') {
+                        nextFlashcard();
+                    } else if (e.code === 'ArrowLeft') {
+                        prevFlashcard();
+                    }
+                }
+            });
+        };
+
+        // ----------------------------------------------------
+        // TAB NAVIGATION
+        // ----------------------------------------------------
+        function switchTab(tabId) {
+            const views = ['modules', 'simulators', 'flashcards', 'quiz', 'cheatsheet'];
+            views.forEach(v => {
+                document.getElementById('view-' + v).classList.add('hidden');
+                const btn = document.getElementById('tab-' + v);
+                btn.className = "tab-btn px-3.5 py-2 rounded-lg font-semibold text-xs md:text-sm whitespace-nowrap transition flex items-center gap-2 bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-white border border-slate-800";
+            });
+
+            document.getElementById('view-' + tabId).classList.remove('hidden');
+            const activeBtn = document.getElementById('tab-' + tabId);
+            activeBtn.className = "tab-btn active-tab px-3.5 py-2 rounded-lg font-bold text-xs md:text-sm whitespace-nowrap transition flex items-center gap-2 bg-gradient-to-r from-lvCyan/20 to-lvBlue/20 text-lvCyan border border-lvCyan/50 shadow-lg shadow-lvCyan/10";
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // ----------------------------------------------------
+        // PROGRESS CALCULATION
+        // ----------------------------------------------------
+        function updateOverallProgress() {
+            const totalModSections = MODULES_DATA.reduce((acc, m) => acc + m.sections.length, 0); // 16 sections
+            const totalCards = FLASHCARDS_DATA.length; // 36 cards
+            const totalQuiz = QUIZ_QUESTIONS.length; // 30 questions
+
+            const modScore = (readModules.length / totalModSections) * 30; // 30% weight
+            const fcScore = (learnedCards.length / totalCards) * 30;       // 30% weight
+            
+            let correctQuizCount = 0;
+            QUIZ_QUESTIONS.forEach(q => {
+                if (quizAnswers[q.id] === q.ans) correctQuizCount++;
+            });
+            const qzScore = (correctQuizCount / totalQuiz) * 40;           // 40% weight
+
+            const totalPercent = Math.min(100, Math.round(modScore + fcScore + qzScore));
+
+            document.getElementById('overallProgressText').innerText = `${totalPercent}%`;
+            document.getElementById('overallProgressBar').style.width = `${totalPercent}%`;
+            document.getElementById('fcBadge').innerText = `${learnedCards.length}/${totalCards}`;
+        }
+
+        function resetProgress() {
+            localStorage.removeItem('subu_daq_learned_cards');
+            localStorage.removeItem('subu_daq_read_modules');
+            localStorage.removeItem('subu_daq_quiz_answers');
+            learnedCards = [];
+            readModules = [];
+            quizAnswers = {};
+            renderModules();
+            renderFlashcard();
+            renderQuiz();
+            updateOverallProgress();
+        }
+
+        // ----------------------------------------------------
+        // TAB 1: RENDER & FILTER STUDY MODULES
+        // ----------------------------------------------------
+        function renderModules() {
+            const container = document.getElementById('modulesContainer');
+            const searchQuery = (document.getElementById('moduleSearchInput')?.value || '').toLowerCase().trim();
+            container.innerHTML = '';
+
+            MODULES_DATA.forEach(mod => {
+                if (currentModFilter !== 'all' && mod.id !== currentModFilter) return;
+
+                // Filter sections by search query
+                const matchingSections = mod.sections.filter((sec, idx) => {
+                    if (!searchQuery) return true;
+                    const fullText = (mod.pdfTitle + ' ' + sec.title + ' ' + sec.points.join(' ') + ' ' + sec.mnemonic + ' ' + sec.trap).toLowerCase();
+                    return fullText.includes(searchQuery);
+                });
+
+                if (matchingSections.length === 0) return;
+
+                const modEl = document.createElement('div');
+                modEl.className = "bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden shadow-xl";
+                
+                let sectionsHtml = '';
+                matchingSections.forEach((sec, sIdx) => {
+                    const secKey = `m${mod.id}_s${sIdx}`;
+                    const isRead = readModules.includes(secKey);
+
+                    sectionsHtml += `
+                        <div class="p-5 border-t border-slate-800/80 hover:bg-slate-800/20 transition">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                                <h4 class="text-base font-bold text-white flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full bg-${mod.color}"></span>
+                                    ${sec.title}
+                                </h4>
+                                <button onclick="toggleSectionRead('${secKey}')" class="self-start sm:self-auto text-xs font-mono px-3 py-1 rounded-lg border transition flex items-center gap-1.5 ${isRead ? 'bg-lvGreen/20 border-lvGreen text-lvGreen font-bold' : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'}">
+                                    ${isRead ? '✅ Okundu & Özümsendi' : '⬜ Okudum İşaretle'}
+                                </button>
+                            </div>
+
+                            <ul class="space-y-2.5 text-sm text-slate-300 leading-relaxed mb-4 pl-1">
+                                ${sec.points.map(p => `<li class="flex items-start gap-2.5"><span class="text-${mod.color} mt-1">▹</span><span>${p}</span></li>`).join('')}
+                            </ul>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                                <div class="bg-emerald-950/30 border border-lvGreen/40 rounded-xl p-3 text-xs text-emerald-200 font-mono leading-relaxed">
+                                    💡 <b>${sec.mnemonic}</b>
+                                </div>
+                                <div class="bg-red-950/30 border border-red-500/40 rounded-xl p-3 text-xs text-red-200 font-mono leading-relaxed">
+                                    ⚠️ <b>${sec.trap}</b>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                modEl.innerHTML = `
+                    <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div class="flex items-center gap-3">
+                            <span class="px-2.5 py-1 rounded-lg bg-${mod.color}/20 text-${mod.color} border border-${mod.color}/40 font-mono font-bold text-xs">${mod.badge}</span>
+                            <h3 class="text-base md:text-lg font-extrabold text-white">${mod.pdfTitle}</h3>
+                        </div>
+                    </div>
+                    <div>${sectionsHtml}</div>
+                `;
+
+                container.appendChild(modEl);
+            });
+        }
+
+        function filterModules(modId) {
+            currentModFilter = modId;
+            document.querySelectorAll('.mod-filter-btn').forEach(btn => {
+                if (btn.dataset.mod === modId) {
+                    btn.className = "mod-filter-btn bg-lvCyan text-obsidian font-bold px-3 py-1.5 rounded-lg text-xs transition";
+                } else {
+                    btn.className = "mod-filter-btn bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs transition";
+                }
+            });
+            renderModules();
+        }
+
+        function searchModules() {
+            renderModules();
+        }
+
+        function toggleSectionRead(secKey) {
+            if (readModules.includes(secKey)) {
+                readModules = readModules.filter(k => k !== secKey);
+            } else {
+                readModules.push(secKey);
+            }
+            localStorage.setItem('subu_daq_read_modules', JSON.stringify(readModules));
+            renderModules();
+            updateOverallProgress();
+        }
+
+        // ----------------------------------------------------
+        // TAB 2: INTERACTIVE SIMULATORS
+        // ----------------------------------------------------
+        function initSimulators() {
+            // 1. Wire Selector Buttons
+            const wireBtnContainer = document.getElementById('wireSelectorBtns');
+            wireBtnContainer.innerHTML = WIRE_DATA.map((w, idx) => `
+                <button onclick="selectWireType('${w.id}')" id="wireBtn_${w.id}" class="p-2 rounded-lg border text-left transition flex flex-col justify-between ${idx === 0 ? 'bg-slate-800 border-white' : 'bg-obsidian/70 border-slate-800 hover:border-slate-600'}">
+                    <span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded w-fit" style="background:${w.color}22; color:${w.color}; border:1px solid ${w.color}66">${w.terminal}</span>
+                    <span class="text-xs font-semibold text-slate-200 mt-1 leading-tight">${w.name.split(' ')[0]}</span>
+                </button>
+            `).join('');
+            selectWireType('dbl');
+
+            // 2. Mechanical Action Buttons
+            const mechBtnContainer = document.getElementById('mechActionBtns');
+            mechBtnContainer.innerHTML = MECH_ACTIONS.map(m => `
+                <button onclick="selectMechAction('${m.id}')" id="mechBtn_${m.id}" class="p-2 rounded-lg border text-xs font-mono text-left transition ${m.id === selectedMechMode ? 'bg-lvGreen/20 border-lvGreen text-lvGreen font-bold' : 'bg-obsidian/70 border-slate-800 text-slate-300 hover:border-slate-700'}">
+                    ${m.name}
+                </button>
+            `).join('');
+            selectMechAction('sw_pressed');
+
+            // 3. Loop Simulator Init
+            updateLoopSim();
+
+            // 4. Thermometer & Formula Simulator Init
+            updateThermoSim();
+            updateFormulaSim();
+        }
+
+        function selectWireType(wireId) {
+            const w = WIRE_DATA.find(item => item.id === wireId);
+            if (!w) return;
+
+            WIRE_DATA.forEach(item => {
+                const b = document.getElementById('wireBtn_' + item.id);
+                if (b) {
+                    b.className = item.id === wireId 
+                        ? "p-2 rounded-lg border-2 border-lvCyan bg-slate-800 text-left transition flex flex-col justify-between shadow-md"
+                        : "p-2 rounded-lg border border-slate-800 bg-obsidian/70 hover:border-slate-600 text-left transition flex flex-col justify-between";
+                }
+            });
+
+            const box = document.getElementById('wireDisplayBox');
+            const isBool = w.id === 'bool';
+            box.innerHTML = `
+                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2">
+                    <div>
+                        <span class="text-sm font-bold text-white">${w.name}</span>
+                        <span class="ml-2 text-xs font-mono px-2 py-0.5 rounded" style="background:${w.color}25; color:${w.color}">${w.colorName}</span>
+                    </div>
+                    <div class="text-xs font-mono text-slate-400">
+                        Boş Tünel Varsayılanı: <b class="text-white">${w.defaultVal}</b>
+                    </div>
+                </div>
+                <p class="text-xs text-slate-300">${w.desc}</p>
+                
+                <!-- Visual Terminals & Wires -->
+                <div class="space-y-3 pt-1">
+                    <!-- Scalar Wire -->
+                    <div class="flex items-center gap-3">
+                        <span class="w-20 text-[11px] font-mono text-slate-400">Skaler (Tek):</span>
+                        <div class="px-2 py-0.5 rounded border-2 font-mono text-xs font-bold bg-slate-900" style="border-color:${w.color}; color:${w.color}">${w.terminal} ▶</div>
+                        <div class="flex-1 ${isBool ? 'wire-boolean' : 'wire-scalar'}" style="background:${w.color}; border-color:${w.color}"></div>
+                        <div class="px-2 py-0.5 rounded border font-mono text-xs bg-slate-900" style="border-color:${w.color}; color:${w.color}">▶ ${w.terminal}</div>
+                    </div>
+                    <!-- 1D Array Wire -->
+                    <div class="flex items-center gap-3">
+                        <span class="w-20 text-[11px] font-mono text-slate-400">1B Dizi (1D):</span>
+                        <div class="px-2 py-0.5 rounded border-2 font-mono text-xs font-bold bg-slate-900" style="border-color:${w.color}; color:${w.color}">[${w.terminal}] ▶</div>
+                        <div class="flex-1 wire-1d rounded-full" style="background:${w.color}"></div>
+                        <div class="px-2 py-0.5 rounded border font-mono text-xs bg-slate-900" style="border-color:${w.color}; color:${w.color}">▶ [${w.terminal}]</div>
+                    </div>
+                    <!-- 2D Array Wire -->
+                    <div class="flex items-center gap-3">
+                        <span class="w-20 text-[11px] font-mono text-slate-400">2B Dizi (2D):</span>
+                        <div class="px-2 py-0.5 rounded border-2 font-mono text-xs font-bold bg-slate-900" style="border-color:${w.color}; color:${w.color}">[[${w.terminal}]]</div>
+                        <div class="flex-1 wire-2d" style="border-color:${w.color}"></div>
+                        <div class="px-2 py-0.5 rounded border font-mono text-xs bg-slate-900" style="border-color:${w.color}; color:${w.color}">[[${w.terminal}]]</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Mechanical Action Simulator Logic
+        function selectMechAction(modeId) {
+            selectedMechMode = modeId;
+            simBoolState = false;
+            updateSimButtonUI();
+
+            MECH_ACTIONS.forEach(m => {
+                const btn = document.getElementById('mechBtn_' + m.id);
+                if (btn) {
+                    btn.className = m.id === modeId
+                        ? "p-2 rounded-lg border-2 border-lvGreen bg-lvGreen/20 text-lvGreen font-bold text-xs font-mono text-left transition"
+                        : "p-2 rounded-lg border border-slate-800 bg-obsidian/70 text-slate-300 hover:border-slate-700 text-xs font-mono text-left transition";
+                }
+            });
+
+            const currentObj = MECH_ACTIONS.find(m => m.id === modeId);
+            document.getElementById('mechExplanation').innerHTML = `⚙️ <b>${currentObj.name}:</b> ${currentObj.desc}`;
+        }
+
+        function handleSimBtnDown() {
+            if (selectedMechMode === 'sw_pressed') {
+                simBoolState = !simBoolState;
+            } else if (selectedMechMode === 'sw_until' || selectedMechMode === 'lt_pressed' || selectedMechMode === 'lt_until') {
+                simBoolState = true;
+            }
+            updateSimButtonUI();
+        }
+
+        function handleSimBtnUp() {
+            if (selectedMechMode === 'sw_released') {
+                simBoolState = !simBoolState;
+            } else if (selectedMechMode === 'sw_until' || selectedMechMode === 'lt_until') {
+                simBoolState = false;
+            } else if (selectedMechMode === 'lt_released') {
+                simBoolState = true;
+            }
+            updateSimButtonUI();
+        }
+
+        function handleSimBtnLeave() {
+            if (selectedMechMode === 'sw_until') {
+                simBoolState = false;
+                updateSimButtonUI();
+            }
+        }
+
+        function triggerViRead() {
+            if (selectedMechMode.startsWith('lt_')) {
+                simBoolState = false;
+                updateSimButtonUI();
+            }
+        }
+
+        function updateSimButtonUI() {
+            const btn = document.getElementById('simPushButton');
+            const led = document.getElementById('simLedIndicator');
+            if (simBoolState) {
+                btn.className = "w-36 h-14 rounded-xl font-bold text-sm border-2 transition-all select-none shadow-lg bg-lvGreen text-obsidian border-white scale-95";
+                btn.innerText = "AKTİF (TRUE)";
+                led.className = "w-14 h-14 mx-auto rounded-full border-4 border-white bg-lvGreen shadow-[0_0_25px_#00d647] transition-all duration-150 flex items-center justify-center font-mono text-xs font-extrabold text-obsidian";
+                led.innerText = "TRUE";
+            } else {
+                btn.className = "w-36 h-14 rounded-xl font-bold text-sm border-2 transition-all select-none shadow-lg bg-slate-800 border-slate-600 text-slate-200";
+                btn.innerText = "BAS / TUT (FALSE)";
+                led.className = "w-14 h-14 mx-auto rounded-full border-4 border-slate-700 bg-emerald-950 transition-all duration-150 flex items-center justify-center font-mono text-xs font-bold text-slate-400";
+                led.innerText = "FALSE";
+            }
+        }
+
+        // Loop Simulator Logic
+        function updateLoopSim() {
+            const outerN = Math.max(1, parseInt(document.getElementById('simOuterN').value) || 1);
+            const innerN = Math.max(1, parseInt(document.getElementById('simInnerN').value) || 1);
+            const totalIterations = outerN * innerN;
+            const finalOuterI = outerN - 1;
+            const finalInnerI = innerN - 1;
+
+            document.getElementById('loopSimResult').innerHTML = `
+                <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                    <span class="text-slate-400">Toplam İterasyon Sayısı (<code class="text-lvCyan">M × N</code>):</span>
+                    <span class="font-mono font-bold text-sm text-lvCyan">${outerN} × ${innerN} = ${totalIterations} Kez Çalışır</span>
+                </div>
+                <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                    <span class="text-slate-400">Döngü Bittiğinde <b>Dış Döngü [i]</b> Göstergesi:</span>
+                    <span class="font-mono font-bold text-sm text-lvOrange">${finalOuterI} <span class="text-[11px] text-slate-400">(0'dan ${finalOuterI}'e kadar)</span></span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-400">Döngü Bittiğinde <b>İç Döngü [i]</b> Göstergesi:</span>
+                    <span class="font-mono font-bold text-sm text-lvGreen">${finalInnerI} <span class="text-[11px] text-slate-400">(0'dan ${finalInnerI}'e kadar)</span></span>
+                </div>
+            `;
+        }
+
+        function setStopTrapMode(mode) {
+            const btnIn = document.getElementById('trapBtnInside');
+            const btnOut = document.getElementById('trapBtnOutside');
+            const text = document.getElementById('stopTrapText');
+
+            if (mode === 'inside') {
+                btnIn.className = "flex-1 py-1.5 px-2 rounded-lg text-xs font-bold bg-lvGreen text-obsidian transition";
+                btnOut.className = "flex-1 py-1.5 px-2 rounded-lg text-xs font-bold bg-slate-800 text-slate-300 transition";
+                text.innerHTML = "<b>A Durumu (Stop Döngü İÇİNDE - Doğru):</b> Stop boolean kontrolü döngünün içinde yer alır ve doğrudan koşullu terminale bağlıdır. Kontrol her iterasyonda yeniden okunur; kullanıcı çalışırken switch'e basarsa döngü o anda gerçek zamanlı durur.";
+            } else {
+                btnOut.className = "flex-1 py-1.5 px-2 rounded-lg text-xs font-bold bg-red-500 text-white transition";
+                btnIn.className = "flex-1 py-1.5 px-2 rounded-lg text-xs font-bold bg-slate-800 text-slate-300 transition";
+                text.innerHTML = "<b>B Durumu (Stop Döngü DIŞINDA / Tünelli - TUZAK!):</b> Döngü dışındaki bir kontrolün değeri döngü başlamadan önce <b>yalnızca 1 kez okunur</b> ve tüm iterasyonlar boyunca sabit kalır! Kullanıcı döngü çalışırken dışarıdaki stop butonuna bassa bile değişiklik döngüye hiç yansımaz, döngü durmaz!";
+            }
+        }
+
+        // Thermometer & Formula Simulator Logic
+        function updateThermoSim() {
+            const c = parseFloat(document.getElementById('simCelsiusInput').value) || 0;
+            const k = c + 273;
+            const r = +(c * 0.8).toFixed(2);
+            const f = +(c * 1.8 + 32).toFixed(2);
+
+            document.getElementById('celsiusValLabel').innerText = `${c} °C`;
+            document.getElementById('thC').innerText = c;
+            document.getElementById('thK').innerText = k;
+            document.getElementById('thR').innerText = r;
+            document.getElementById('thF').innerText = f;
+        }
+
+        function updateFormulaSim() {
+            const a = parseFloat(document.getElementById('formulaInputA').value);
+            const outEl = document.getElementById('formulaOutputX');
+            if (isNaN(a)) {
+                outEl.innerText = "NaN";
+                return;
+            }
+            const x = (a <= 7) ? (a >= 0 ? Math.sqrt(a).toFixed(5) : "NaN (Negatif Kök)") : -1;
+            outEl.innerText = x;
+        }
+
+        // ----------------------------------------------------
+        // TAB 3: FLASHCARDS ENGINE
+        // ----------------------------------------------------
+        function renderFlashcard() {
+            if (currentFcList.length === 0) {
+                document.getElementById('fcFrontText').innerText = "🎉 Tebrikler! Tekrar edilecek kart kalmadı, tüm kartları öğrendin!";
+                document.getElementById('fcBackText').innerText = "Tüm kartları görmek için üstten 'Tüm Kartlar' butonuna tıklayabilirsin.";
+                document.getElementById('fcMemoryTip').innerText = "Hedef: 100 Puan!";
+                document.getElementById('fcCounterLabel').innerText = "0 / 0";
+                return;
+            }
+
+            if (currentFcIndex >= currentFcList.length) currentFcIndex = 0;
+            if (currentFcIndex < 0) currentFcIndex = currentFcList.length - 1;
+
+            const card = currentFcList[currentFcIndex];
+            const isLearned = learnedCards.includes(card.id);
+
+            // Reset flip state
+            isFcFlipped = false;
+            document.getElementById('flashcardInner').classList.remove('rotate-y-180');
+
+            document.getElementById('fcCategoryLabel').innerText = card.unit;
+            document.getElementById('fcCounterLabel').innerText = `Kart ${currentFcIndex + 1} / ${currentFcList.length}`;
+            document.getElementById('fcStatusBadge').innerHTML = isLearned 
+                ? '<span class="text-lvGreen font-bold">✅ Öğrenildi</span>' 
+                : '<span class="text-amber-400">⏳ Öğreniliyor</span>';
+
+            document.getElementById('fcFrontText').innerText = card.q;
+            document.getElementById('fcBackText').innerText = card.a;
+            document.getElementById('fcMemoryTip').innerText = "💡 " + card.tip;
+        }
+
+        function flipCurrentCard() {
+            if (currentFcList.length === 0) return;
+            isFcFlipped = !isFcFlipped;
+            const inner = document.getElementById('flashcardInner');
+            if (isFcFlipped) {
+                inner.classList.add('rotate-y-180');
+            } else {
+                inner.classList.remove('rotate-y-180');
+            }
+        }
+
+        function nextFlashcard() {
+            currentFcIndex++;
+            renderFlashcard();
+        }
+
+        function prevFlashcard() {
+            currentFcIndex--;
+            renderFlashcard();
+        }
+
+        function markFlashcard(learned) {
+            if (currentFcList.length === 0) return;
+            const card = currentFcList[currentFcIndex];
+            if (learned) {
+                if (!learnedCards.includes(card.id)) learnedCards.push(card.id);
+            } else {
+                learnedCards = learnedCards.filter(id => id !== card.id);
+            }
+            localStorage.setItem('subu_daq_learned_cards', JSON.stringify(learnedCards));
+            updateOverallProgress();
+            nextFlashcard();
+        }
+
+        function filterFlashcards(mode) {
+            const btnAll = document.getElementById('fcFilterAll');
+            const btnUn = document.getElementById('fcFilterUnlearned');
+
+            if (mode === 'unlearned') {
+                currentFcList = FLASHCARDS_DATA.filter(c => !learnedCards.includes(c.id));
+                btnUn.className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-lvCyan text-obsidian";
+                btnAll.className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700";
+            } else {
+                currentFcList = [...FLASHCARDS_DATA];
+                btnAll.className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-lvCyan text-obsidian";
+                btnUn.className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700";
+            }
+            currentFcIndex = 0;
+            renderFlashcard();
+        }
+
+        function shuffleFlashcards() {
+            currentFcList.sort(() => Math.random() - 0.5);
+            currentFcIndex = 0;
+            renderFlashcard();
+        }
+
+        // ----------------------------------------------------
+        // TAB 4: EXAM SIMULATOR (QUIZ) ENGINE
+        // ----------------------------------------------------
+        function startQuiz(mode) {
+            currentQuizMode = mode;
+            ['all', 'cyber', 'labview'].forEach(m => {
+                const btn = document.getElementById('qzMode' + m.charAt(0).toUpperCase() + m.slice(1));
+                if (btn) {
+                    btn.className = m === mode
+                        ? "px-3 py-1.5 rounded-lg text-xs font-bold bg-lvCyan text-obsidian transition"
+                        : "px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition";
+                }
+            });
+            renderQuiz();
+        }
+
+        function renderQuiz() {
+            const container = document.getElementById('quizQuestionsContainer');
+            const filteredQuestions = QUIZ_QUESTIONS.filter(q => currentQuizMode === 'all' ? true : q.cat === currentQuizMode);
+
+            let answered = 0;
+            let correct = 0;
+            let wrong = 0;
+
+            container.innerHTML = filteredQuestions.map((q, idx) => {
+                const userAns = quizAnswers[q.id];
+                const isAnswered = userAns !== undefined;
+                if (isAnswered) {
+                    answered++;
+                    if (userAns === q.ans) correct++;
+                    else wrong++;
+                }
+
+                const optionsHtml = q.options.map((opt, oIdx) => {
+                    let btnStyle = "bg-obsidian/80 border-slate-800 text-slate-300 hover:border-lvCyan/60 hover:bg-slate-800/60";
+                    let icon = `<span class="w-6 h-6 rounded-lg bg-slate-800 text-slate-400 font-mono text-xs flex items-center justify-center shrink-0">${['A','B','C','D'][oIdx]}</span>`;
+
+                    if (isAnswered) {
+                        if (oIdx === q.ans) {
+                            btnStyle = "bg-emerald-950/60 border-lvGreen text-lvGreen font-bold";
+                            icon = `<span class="w-6 h-6 rounded-lg bg-lvGreen text-obsidian font-mono text-xs font-bold flex items-center justify-center shrink-0">✓</span>`;
+                        } else if (oIdx === userAns && userAns !== q.ans) {
+                            btnStyle = "bg-red-950/60 border-red-500 text-red-300 line-through";
+                            icon = `<span class="w-6 h-6 rounded-lg bg-red-500 text-white font-mono text-xs font-bold flex items-center justify-center shrink-0">✗</span>`;
+                        } else {
+                            btnStyle = "bg-obsidian/40 border-slate-800/50 text-slate-500 opacity-60";
+                        }
+                    }
+
+                    return `
+                        <button onclick="answerQuizQuestion(${q.id}, ${oIdx})" ${isAnswered ? 'disabled' : ''} class="w-full text-left p-3.5 rounded-xl border transition flex items-center gap-3 text-xs sm:text-sm ${btnStyle}">
+                            ${icon}
+                            <span>${opt}</span>
+                        </button>
+                    `;
+                }).join('');
+
+                const feedbackHtml = isAnswered ? `
+                    <div class="mt-3 p-3.5 rounded-xl text-xs font-mono leading-relaxed ${userAns === q.ans ? 'bg-emerald-950/30 border border-lvGreen/40 text-emerald-200' : 'bg-red-950/30 border border-red-500/40 text-red-200'}">
+                        <b>${userAns === q.ans ? '🎯 DOĞRU CEVAP!' : '❌ YANLIŞ! Doğru Şık: ' + ['A','B','C','D'][q.ans]}</b><br>
+                        ${q.exp}
+                    </div>
+                ` : '';
+
+                return `
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-[11px] font-mono uppercase px-2.5 py-0.5 rounded ${q.cat === 'cyber' ? 'bg-lvPink/15 text-lvPink border border-lvPink/30' : 'bg-lvCyan/15 text-lvCyan border border-lvCyan/30'}">
+                                ${q.cat === 'cyber' ? '🛡️ Siber Güvenlik & DAQ' : '⚙️ LabVIEW & Blok Diyagram'}
+                            </span>
+                            <span class="text-xs font-mono text-slate-500">Soru #${idx + 1}</span>
+                        </div>
+                        <h3 class="text-sm sm:text-base font-bold text-white mb-4 leading-snug">${q.q}</h3>
+                        <div class="grid grid-cols-1 gap-2.5">
+                            ${optionsHtml}
+                        </div>
+                        ${feedbackHtml}
+                    </div>
+                `;
+            }).join('');
+
+            // Update Score Banner
+            const totalQ = filteredQuestions.length;
+            const scoreOut100 = totalQ > 0 ? Math.round((correct / totalQ) * 100) : 0;
+            document.getElementById('qzAnsweredCount').innerText = `${answered} / ${totalQ}`;
+            document.getElementById('qzCorrectCount').innerText = `${correct} D`;
+            document.getElementById('qzWrongCount').innerText = `${wrong} Y`;
+            document.getElementById('qzCurrentScore').innerText = `${scoreOut100} / 100`;
+        }
+
+        function answerQuizQuestion(qId, selectedIdx) {
+            if (quizAnswers[qId] !== undefined) return;
+            quizAnswers[qId] = selectedIdx;
+            localStorage.setItem('subu_daq_quiz_answers', JSON.stringify(quizAnswers));
+            renderQuiz();
+            updateOverallProgress();
+        }
+
+        function resetCurrentQuiz() {
+            if (currentQuizMode === 'all') {
+                quizAnswers = {};
+            } else {
+                QUIZ_QUESTIONS.filter(q => q.cat === currentQuizMode).forEach(q => {
+                    delete quizAnswers[q.id];
+                });
+            }
+            localStorage.setItem('subu_daq_quiz_answers', JSON.stringify(quizAnswers));
+            renderQuiz();
+            updateOverallProgress();
+        }
+    </script>
+</body>
+</html>
